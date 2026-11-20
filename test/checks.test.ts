@@ -132,10 +132,10 @@ describe('https', () => {
     expect(https({ ...good, certificate: days(-1) }, NOW).level).toBe('red')
   })
 
-  test('no HSTS is yellow, http without redirect red, nothing on http fine', () => {
+  test('no HSTS or nothing on http is yellow, http without redirect red', () => {
     expect(https({ ...good, headers: {} }, NOW).level).toBe('yellow')
     expect(https({ ...good, http: { url: 'http://www.firma.de/', status: 200, finalUrl: 'http://www.firma.de/' } }, NOW)).toMatchObject({ level: 'red', http: 'no-redirect' })
-    expect(https({ ...good, http: { url: 'http://www.firma.de/', error: 'refused' } }, NOW)).toMatchObject({ level: 'green', http: 'unreachable' })
+    expect(https({ ...good, http: { url: 'http://www.firma.de/', error: 'refused' } }, NOW)).toMatchObject({ level: 'yellow', http: 'unreachable' })
   })
 
   test('a page over plain http is red', () => {

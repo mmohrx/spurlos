@@ -105,7 +105,10 @@ describe('scan', { timeout: 30_000 }, () => {
 
     const report = text(s, results)
     expect(report).toContain('Google Fonts')
-    expect(report).toContain('Cookie _ga (shop.example) – eigen, Google Analytics')
+    // each finding carries its own light, so the reader sees which one makes the check red or yellow
+    expect(report).toContain('🔴 Cookie _ga (shop.example) – eigen, Google Analytics')
+    expect(report).toContain('🟡 Cookie session (shop.example) – eigen, unbekannt, bis Sitzungsende')
+    expect(report).toContain('🟡 localStorage: theme – unbekannt')
     expect(report).toContain('Datenschutzerklärung: kein Link auf der Seite gefunden')
     expect(report).toContain('http://shop.example/newsletter – sendet unverschlüsselt über http')
 

@@ -15,28 +15,29 @@ $ npx spurlos beispiel-firma.de
 spurlos – https://beispiel-firma.de/
 
 🔴 Fremde Server: 2. Jeder davon erfährt beim Aufruf die IP-Adresse des Besuchers, noch bevor er etwas anklickt.
-   fonts.googleapis.com – Google Fonts (1 Anfrage)
-   fonts.gstatic.com – Google Fonts (2 Anfragen)
+   🔴 fonts.googleapis.com – Google Fonts (1 Anfrage)
+   🔴 fonts.gstatic.com – Google Fonts (2 Anfragen)
 
-🟡 Cookies und Speicher vor jedem Klick: 1 Cookie, 0 Einträge im Browser-Speicher.
-   Cookie warenkorb (beispiel-firma.de) – eigen, 30 Tage
-   Keine bekannten Tracker. Prüfe bei den Einträgen ohne Namen, ob sie technisch nötig sind.
+🟡 Cookies und Speicher vor jedem Klick: 2 Cookies, 0 Einträge im Browser-Speicher.
+   🟢 Cookie PHPSESSID (beispiel-firma.de) – eigen, Session, bis Sitzungsende
+   🟡 Cookie warenkorb (beispiel-firma.de) – eigen, unbekannt, 30 Tage
+      Keine bekannten Tracker. Prüfe bei den gelb markierten Einträgen, ob sie technisch nötig sind.
 
 🟢 Impressum und Datenschutz: beide verlinkt und erreichbar.
-   Impressum: „Impressum“ → https://beispiel-firma.de/impressum – erreichbar
-   Datenschutzerklärung: „Datenschutz“ → https://beispiel-firma.de/datenschutz – erreichbar
+   🟢 Impressum: „Impressum“ → https://beispiel-firma.de/impressum – erreichbar
+   🟢 Datenschutzerklärung: „Datenschutz“ → https://beispiel-firma.de/datenschutz – erreichbar
 
 🟡 HTTPS: mit Hinweisen.
-   Zertifikat gültig für noch 61 Tage.
-   http:// leitet auf https:// weiter.
-   Kein HSTS-Header (Strict-Transport-Security): Browser merken sich nicht, dass sie nur https nutzen sollen.
+   🟢 Zertifikat gültig für noch 61 Tage.
+   🟢 http:// leitet auf https:// weiter.
+   🟡 Kein HSTS-Header (Strict-Transport-Security): Browser merken sich nicht, dass sie nur https nutzen sollen.
 
 🟡 Sicherheits-Header: 2 von 5 fehlen.
-   Content-Security-Policy fehlt
-   Permissions-Policy fehlt
+   🟡 Content-Security-Policy fehlt
+   🟡 Permissions-Policy fehlt
 
 🟢 Formulare: 1.
-   POST https://beispiel-firma.de/kontakt – sendet verschlüsselt an die eigene Seite
+   🟢 POST https://beispiel-firma.de/kontakt – sendet verschlüsselt an die eigene Seite
 
 Technische Vorprüfung – keine Rechtsberatung und keine Aussage darüber, ob die Seite DSGVO-konform ist.
 ```
@@ -71,11 +72,13 @@ npx spurlos <url>
 | Fremde Server | keine | – | mindestens eine Anfrage an eine andere Domain |
 | Cookies und Speicher | nichts gesetzt, oder nur bekannte Sitzungs- und Sicherheits-Cookies | eigene Cookies oder Einträge, die spurlos nicht kennt | Cookie einer fremden Domain oder eines bekannten Trackers |
 | Impressum und Datenschutz | beide verlinkt und erreichbar | – | ein Link fehlt oder die Seite antwortet mit einem Fehler |
-| HTTPS | https, http leitet weiter, HSTS, Zertifikat noch 14 Tage oder länger gültig | kein HSTS, Zertifikat weniger als 14 Tage gültig | kein https, http ohne Weiterleitung, Zertifikat weniger als 7 Tage gültig oder abgelaufen |
+| HTTPS | https, http leitet weiter, HSTS, Zertifikat noch 14 Tage oder länger gültig | kein HSTS, über http antwortet nichts, Zertifikat weniger als 14 Tage gültig | kein https, http ohne Weiterleitung, Zertifikat weniger als 7 Tage gültig oder abgelaufen |
 | Sicherheits-Header | alle gesetzt | einer oder mehrere fehlen | – |
 | Formulare | keine oder alle senden verschlüsselt an die eigene Seite | eines sendet an einen fremden Server | eines sendet unverschlüsselt über http |
 
 Geprüft werden bei den Headern `Content-Security-Policy`, `X-Frame-Options` (oder `frame-ancestors` in der CSP), `X-Content-Type-Options: nosniff`, `Referrer-Policy` und `Permissions-Policy`. Impressum und Datenschutzerklärung erkennt spurlos am Linktext oder an der Adresse, auf Deutsch und Englisch.
+
+Jeder einzelne Befund hat im Bericht seine eigene Ampel, die Prüfung bekommt die schlechteste davon. So sieht man, welcher Eintrag eine Prüfung gelb oder rot macht.
 
 Bekannte Sitzungs- und Sicherheits-Cookies sind zum Beispiel `XSRF-TOKEN` und `<app>-session` von Laravel, `PHPSESSID`, `JSESSIONID`, `csrftoken` von Django und `__cf_bm` von Cloudflare. Die Liste steht in `src/services.json` (Kategorie `necessary`).
 

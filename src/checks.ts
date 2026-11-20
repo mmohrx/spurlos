@@ -21,7 +21,7 @@ export type Result =
   | { check: 'headers'; level: Level; missing: string[] }
   | { check: 'forms'; level: Level; forms: FormFinding[] }
 
-const worst = (levels: Level[]): Level => (levels.includes('red') ? 'red' : levels.includes('yellow') ? 'yellow' : 'green')
+export const worst = (levels: Level[]): Level => (levels.includes('red') ? 'red' : levels.includes('yellow') ? 'yellow' : 'green')
 
 const services = knownServices as Service[]
 // the most specific host wins: maps.googleapis.com before googleapis.com
@@ -58,6 +58,21 @@ export function thirdParty(scan: Scan): Result {
   return { check: 'third-party', level: hosts.length ? 'red' : 'green', hosts }
 }
 
+const ok = (v: Visit | undefined) => v !== undefined && 'status' in v && v.status >= 200 && v.status < 300
+
+// The level of each single finding; a check's level is the worst of its findings.
+
+/** A third-party cookie or a known tracker's is red, a known session or security cookie green, any other yellow. */
+export const cookieLevel = (c: CookieFinding): Level =>
+  c.thirdParty || (c.service && !isNecessary(c.service)) ? 'red' : isNecessary(c.service) ? 'green' : 'yellow'
+/** spurlos cannot tell what an app keeps in browser storage, so each entry wants a look. */
+export const STORAGE_LEVEL: Level = 'yellow'
+export const legalLevel = (p: LegalPage): Level => (ok(p.visit) ? 'green' : 'red')
+export const certLevel = (daysLeft: number): Level => (daysLeft < 7 ? 'red' : daysLeft < 14 ? 'yellow' : 'green')
+/** nothing on http is yellow: browsers mostly try https first, but old http:// links break */
+export const httpLevel = (h: HttpRedirect): Level => (h === 'no-redirect' ? 'red' : h === 'unreachable' ? 'yellow' : 'green')
+export const formLevel = (f: FormFinding): Level => (f.problem === 'unencrypted' ? 'red' : f.problem ? 'yellow' : 'green')
+
 /**
  * Cookies and storage present before any click. A third-party cookie or a known tracker's is red; known session and
  * security cookies (Laravel's XSRF-TOKEN, PHPSESSID, Cloudflare's __cf_bm …) are green; any other own cookie or
@@ -66,10 +81,7 @@ export function thirdParty(scan: Scan): Result {
 export function cookies(scan: Scan): Result {
   const own = site(new URL(scan.finalUrl).hostname)
   const found = scan.cookies.map(c => ({ ...c, thirdParty: site(c.domain) !== own, service: serviceOfCookie(c.name) }))
-  const level = worst([
-    ...found.map((c): Level => (c.thirdParty || (c.service && !isNecessary(c.service)) ? 'red' : isNecessary(c.service) ? 'green' : 'yellow')),
-    ...scan.storage.map((): Level => 'yellow'),
-  ])
+  const level = worst([...found.map(cookieLevel), ...scan.storage.map((): Level => STORAGE_LEVEL)])
   return { check: 'cookies', level, cookies: found, storage: scan.storage }
 }
 
@@ -88,7 +100,6 @@ export function legalLinks(links: Link[]): (Link & { kind: LegalKind })[] {
   return out
 }
 
-const ok = (v: Visit | undefined) => v !== undefined && 'status' in v && v.status >= 200 && v.status < 300
 
 /** Impressum and Datenschutz each need a link on the page that opens without error. */
 export function legal(scan: Scan): Result {
@@ -103,7 +114,7 @@ export function legal(scan: Scan): Result {
     }
     return page
   })
-  return { check: 'legal', level: pages.every(p => ok(p.visit)) ? 'green' : 'red', pages }
+  return { check: 'legal', level: worst(pages.map(legalLevel)), pages }
 }
 
 /** A page without https, an expired certificate or http left without redirect is red; a certificate close to its end or no HSTS yellow. */
@@ -115,11 +126,11 @@ export function https(scan: Scan, now = Date.now()): Result {
 
   if (scan.certificate) {
     r.certDaysLeft = Math.floor((scan.certificate.validTo * 1000 - now) / 86_400_000)
-    levels.push(r.certDaysLeft < 7 ? 'red' : r.certDaysLeft < 14 ? 'yellow' : 'green')
+    levels.push(certLevel(r.certDaysLeft))
   }
   if (scan.http) {
     r.http = 'error' in scan.http ? 'unreachable' : scan.http.finalUrl.startsWith('https:') ? 'redirects' : 'no-redirect'
-    levels.push(r.http === 'no-redirect' ? 'red' : 'green')
+    levels.push(httpLevel(r.http))
   }
   if (isHttps && !hsts) levels.push('yellow')
   r.level = worst(levels)
@@ -151,7 +162,7 @@ export function forms(scan: Scan): Result {
       if (site(u.hostname) !== own) return { ...f, problem: 'third-party' }
       return f
     })
-  const level = worst(found.map(f => (f.problem === 'unencrypted' ? 'red' : f.problem ? 'yellow' : 'green')))
+  const level = worst(found.map(formLevel))
   return { check: 'forms', level, forms: found }
 }
 

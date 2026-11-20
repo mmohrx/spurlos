@@ -1,4 +1,4 @@
-import type { FormFinding, HttpRedirect, LegalKind, Level, Result } from './checks.ts'
+import { certLevel, cookieLevel, formLevel, httpLevel, legalLevel, STORAGE_LEVEL, type FormFinding, type HttpRedirect, type LegalKind, type Level, type Result } from './checks.ts'
 import type { Scan } from './scan.ts'
 
 export type Lang = 'de' | 'en'
@@ -23,7 +23,8 @@ const de = {
   session: 'bis Sitzungsende',
   underADay: 'unter 1 Tag',
   days: (n: number) => plural(n, 'Tag', 'Tage'),
-  cookiesReview: 'Keine bekannten Tracker. Prüfe bei den Einträgen ohne Namen, ob sie technisch nötig sind.',
+  cookiesReview: 'Keine bekannten Tracker. Prüfe bei den gelb markierten Einträgen, ob sie technisch nötig sind.',
+  unknown: 'unbekannt',
   cookiesNecessary: 'Nur bekannte Sitzungs- und Sicherheits-Cookies, wie sie Frameworks und Proxys für den Betrieb setzen.',
 
   legal: (green: boolean) => `Impressum und Datenschutz: ${green ? 'beide verlinkt und erreichbar.' : 'nicht vollständig.'}`,
@@ -42,7 +43,7 @@ const de = {
   http: {
     redirects: 'http:// leitet auf https:// weiter.',
     'no-redirect': 'http:// liefert die Seite ohne Weiterleitung auf https:// aus.',
-    unreachable: 'Über http:// antwortet nichts. Wer die Adresse ohne https eintippt, landet womöglich im Leeren.',
+    unreachable: 'Über http:// antwortet nichts. Browser versuchen meist zuerst https, alte Links auf http:// laufen aber ins Leere.',
   } satisfies Record<HttpRedirect, string>,
   noHsts: 'Kein HSTS-Header (Strict-Transport-Security): Browser merken sich nicht, dass sie nur https nutzen sollen.',
 
@@ -76,7 +77,8 @@ const en: typeof de = {
   session: 'until the session ends',
   underADay: 'under 1 day',
   days: n => plural(n, 'day', 'days'),
-  cookiesReview: 'No known trackers. For the entries without a name, check whether they are technically necessary.',
+  cookiesReview: 'No known trackers. For the entries marked yellow, check whether they are technically necessary.',
+  unknown: 'unknown',
   cookiesNecessary: 'Only known session and security cookies, as frameworks and proxies set them to run a site.',
 
   legal: green => `Legal notice and privacy policy: ${green ? 'both linked and reachable.' : 'incomplete.'}`,
@@ -95,7 +97,7 @@ const en: typeof de = {
   http: {
     redirects: 'http:// redirects to https://.',
     'no-redirect': 'http:// serves the page without redirecting to https://.',
-    unreachable: 'Nothing answers on http://. Someone typing the address without https may end up nowhere.',
+    unreachable: 'Nothing answers on http://. Browsers mostly try https first, but old links to http:// lead nowhere.',
   },
   noHsts: 'No HSTS header (Strict-Transport-Security): browsers do not remember to use https only.',
 
@@ -120,56 +122,65 @@ function lifetime(t: typeof de, expires: number, now: number): string {
   return days < 1 ? t.underADay : t.days(days)
 }
 
-const indent = (lines: string[]) => lines.map(l => `   ${l}`)
+type Item = [Level, string]
+/** each finding on its own line, with its own light; notes without one go under them */
+const items = (list: Item[], notes: string[] = []) => [...list.map(([l, text]) => `   ${LIGHT[l]} ${text}`), ...notes.map(n => `      ${n}`)]
 
 function section(t: typeof de, r: Result, now: number): string[] {
   const head = (s: string) => `${LIGHT[r.level]} ${s}`
   switch (r.check) {
     case 'third-party':
       if (!r.hosts.length) return [head(t.thirdPartyNone)]
-      return [head(t.thirdParty(r.hosts.length)), ...indent(r.hosts.map(h => `${h.host}${h.service ? ` – ${h.service.name}` : ''} (${t.requests(h.requests)})`))]
-
-    case 'cookies':
-      if (!r.cookies.length && !r.storage.length) return [head(t.cookiesNone)]
       return [
-        head(t.cookies(r.cookies.length, r.storage.length)),
-        ...indent([
-          ...r.cookies.map(c => {
-            const notes = [c.thirdParty ? t.cookieForeign : t.cookieOwn, c.service?.name, lifetime(t, c.expires, now)].filter(Boolean)
-            return `Cookie ${c.name} (${c.domain}) – ${notes.join(', ')}`
-          }),
-          ...r.storage.map(s => `${s.area}: ${s.key}`),
-          ...(r.level === 'yellow' ? [t.cookiesReview] : r.level === 'green' ? [t.cookiesNecessary] : []),
-        ]),
+        head(t.thirdParty(r.hosts.length)),
+        ...items(r.hosts.map(h => ['red', `${h.host}${h.service ? ` – ${h.service.name}` : ''} (${t.requests(h.requests)})`])),
       ]
+
+    case 'cookies': {
+      if (!r.cookies.length && !r.storage.length) return [head(t.cookiesNone)]
+      const list: Item[] = [
+        ...r.cookies.map((c): Item => {
+          const notes = [c.thirdParty ? t.cookieForeign : t.cookieOwn, c.service?.name ?? t.unknown, lifetime(t, c.expires, now)]
+          return [cookieLevel(c), `Cookie ${c.name} (${c.domain}) – ${notes.join(', ')}`]
+        }),
+        ...r.storage.map((s): Item => [STORAGE_LEVEL, `${s.area}: ${s.key} – ${t.unknown}`]),
+      ]
+      const note = r.level === 'yellow' ? t.cookiesReview : r.level === 'green' ? t.cookiesNecessary : null
+      return [head(t.cookies(r.cookies.length, r.storage.length)), ...items(list, note ? [note] : [])]
+    }
 
     case 'legal':
       return [
         head(t.legal(r.level === 'green')),
-        ...indent(
-          r.pages.map(p => {
-            if (!p.link) return `${t.legalName[p.kind]}: ${t.legalNoLink}`
+        ...items(
+          r.pages.map((p): Item => {
+            if (!p.link) return [legalLevel(p), `${t.legalName[p.kind]}: ${t.legalNoLink}`]
             const v = p.visit
             const state = !v ? t.legalNotChecked : 'error' in v ? t.legalUnreachable(v.error) : v.status < 300 ? t.legalOk : t.legalStatus(v.status)
-            return `${t.legalName[p.kind]}: ${t.quote(p.link.text || p.link.href)} → ${p.link.href} – ${state}`
+            return [legalLevel(p), `${t.legalName[p.kind]}: ${t.quote(p.link.text || p.link.href)} → ${p.link.href} – ${state}`]
           }),
         ),
       ]
 
     case 'https': {
-      const cert =
-        r.certDaysLeft === undefined ? null : r.certDaysLeft < 0 ? t.certExpired : t.certDays(r.certDaysLeft) + (r.certDaysLeft < 14 ? t.certRenew : '')
-      const lines = [r.https ? null : t.noHttps, cert, r.http ? t.http[r.http] : null, r.https && !r.hsts ? t.noHsts : null]
-      return [head(t.https[r.level]), ...indent(lines.filter((l): l is string => l !== null))]
+      const list: (Item | null)[] = [
+        r.https ? null : ['red', t.noHttps],
+        r.certDaysLeft === undefined
+          ? null
+          : [certLevel(r.certDaysLeft), r.certDaysLeft < 0 ? t.certExpired : t.certDays(r.certDaysLeft) + (r.certDaysLeft < 14 ? t.certRenew : '')],
+        r.http ? [httpLevel(r.http), t.http[r.http]] : null,
+        r.https && !r.hsts ? ['yellow', t.noHsts] : null,
+      ]
+      return [head(t.https[r.level]), ...items(list.filter((i): i is Item => i !== null))]
     }
 
     case 'headers':
       if (!r.missing.length) return [head(t.headersOk)]
-      return [head(t.headersMissing(r.missing.length)), ...indent(r.missing.map(t.headerMissing))]
+      return [head(t.headersMissing(r.missing.length)), ...items(r.missing.map(m => ['yellow', t.headerMissing(m)]))]
 
     case 'forms':
       if (!r.forms.length) return [head(t.formsNone)]
-      return [head(t.forms(r.forms.length)), ...indent(r.forms.map(f => `${f.method.toUpperCase()} ${f.action} – ${t.form[f.problem ?? 'ok']}`))]
+      return [head(t.forms(r.forms.length)), ...items(r.forms.map(f => [formLevel(f), `${f.method.toUpperCase()} ${f.action} – ${t.form[f.problem ?? 'ok']}`]))]
   }
 }
 

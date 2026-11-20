@@ -3,7 +3,7 @@ import type { BrowserContext } from 'playwright'
 import { describe, expect, test } from 'vitest'
 import { runChecks, type Result } from '../src/checks.ts'
 import { text } from '../src/report.ts'
-import { scan } from '../src/scan.ts'
+import { BOT_AGENT, scan } from '../src/scan.ts'
 
 const SITE = 'https://shop.example'
 const sites = new URL('./sites/', import.meta.url)
@@ -20,9 +20,14 @@ const HARDENED = {
  * Serves test/sites under SITE (clean.html as the start page, /impressum as impressum.html) and answers every other
  * host with an empty 200 – so no test touches the network.
  */
+/** what each request to SITE was sent with, newest last */
+const seen: { url: string; ua: string | undefined; ch: string | undefined }[] = []
+
 async function offline(context: BrowserContext) {
   await context.route('**/*', async route => {
     const u = new URL(route.request().url())
+    const h = route.request().headers()
+    if (u.origin === SITE) seen.push({ url: u.href, ua: h['user-agent'], ch: h['sec-ch-ua'] })
     if (u.origin !== SITE) return route.fulfill({ status: 200, body: '' })
     const name = u.pathname === '/' ? 'clean.html' : u.pathname.slice(1)
     const file = name.includes('.') ? name : `${name}.html`
@@ -38,7 +43,9 @@ async function offline(context: BrowserContext) {
 }
 
 /** Stands in for the server asked over http://: it answers from `finalUrl`, as if it had redirected there. */
-const answersFrom = (finalUrl: (url: string) => string): typeof fetch => async input => {
+const fetched: (string | null)[] = []
+const answersFrom = (finalUrl: (url: string) => string): typeof fetch => async (input, init) => {
+  fetched.push(new Headers(init?.headers).get('user-agent'))
   const r = new Response(null, { status: 200 })
   Object.defineProperty(r, 'url', { value: finalUrl(String(input)) })
   return r
@@ -107,5 +114,29 @@ describe('scan', { timeout: 30_000 }, () => {
     expect(english).toContain('Cookie _ga (shop.example) – first-party, Google Analytics')
     expect(english).toContain('http:// serves the page without redirecting to https://.')
     expect(english).not.toMatch(/[äöüß„]/)
+  })
+
+  test('the page sees a regular Chrome with spurlos added, the side requests an open bot', async () => {
+    seen.length = 0
+    fetched.length = 0
+    const s = await scan(`${SITE}/`, { setup: offline, fetch: redirects })
+
+    expect(s.userAgent).toMatch(/^Mozilla\/5\.0 \(.+\) AppleWebKit\/537\.36 \(KHTML, like Gecko\) Chrome\/\d+\.0\.0\.0 Safari\/537\.36 spurlos\/\d+\.\d+\.\d+$/)
+    const page = seen.find(r => r.url === `${SITE}/`)
+    expect(page?.ua).toBe(s.userAgent)
+    expect(page?.ch).toMatch(/"Chromium"/)
+    expect(page?.ch).not.toMatch(/Headless/)
+
+    expect(seen.find(r => r.url === `${SITE}/impressum`)?.ua).toBe(BOT_AGENT)
+    expect(fetched).toEqual([BOT_AGENT])
+    expect(BOT_AGENT).toMatch(/^spurlos\/\d+\.\d+\.\d+ \(\+https:\/\/github\.com\/mmohrx\/spurlos\)$/)
+  })
+
+  test('--user-agent replaces every one of them', async () => {
+    seen.length = 0
+    fetched.length = 0
+    await scan(`${SITE}/`, { setup: offline, fetch: redirects, userAgent: 'Test/1' })
+    expect(new Set(seen.map(r => r.ua))).toEqual(new Set(['Test/1']))
+    expect(fetched).toEqual(['Test/1'])
   })
 })

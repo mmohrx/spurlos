@@ -4,20 +4,21 @@ import { runChecks } from './checks.ts'
 import { MESSAGES, text, type Lang } from './report.ts'
 import { scan } from './scan.ts'
 
-const USAGE = `spurlos <url> [--lang de|en] [--json]
+const USAGE = `spurlos <url> [--lang de|en] [--json] [--user-agent <kennung>]
 
 Ruft die Seite wie ein neuer Besucher auf, der nichts anklickt, und zeigt,
 welche fremden Server dabei angefragt und welche Cookies gesetzt werden.
 
   --lang   Sprache des Berichts: de (Standard) oder en
   --json   Ergebnis als JSON statt als Text
+  --user-agent  eigene Browserkennung für alle Aufrufe
   --help   diese Hilfe
 
 Exit-Code: 0 ohne roten Befund, 1 mit rotem Befund, 2 bei einem Fehler.`
 
 const { values, positionals } = parseArgs({
   allowPositionals: true,
-  options: { json: { type: 'boolean' }, lang: { type: 'string', default: 'de' }, help: { type: 'boolean', short: 'h' } },
+  options: { json: { type: 'boolean' }, lang: { type: 'string', default: 'de' }, 'user-agent': { type: 'string' }, help: { type: 'boolean', short: 'h' } },
 })
 
 const arg = positionals[0]
@@ -41,7 +42,8 @@ try {
 }
 
 try {
-  const s = await scan(url)
+  const ua = values['user-agent']
+  const s = await scan(url, ua ? { userAgent: ua } : {})
   const results = runChecks(s)
   console.log(values.json ? JSON.stringify({ scan: s, results, note: MESSAGES[lang].disclaimer }, null, 2) : text(s, results, lang))
   process.exit(results.some(r => r.level === 'red') ? 1 : 0)

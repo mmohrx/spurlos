@@ -45,12 +45,24 @@ spurlos nutzt einen echten Browser (Chromium über Playwright). Es findet also a
 
 ## Installation
 
-Node.js 22 oder neuer. Beim ersten Mal braucht Playwright seinen Browser:
+Mit Docker, ohne Node:
+
+```
+docker run --rm ghcr.io/mmohrx/spurlos beispiel-firma.de
+```
+
+Oder mit Node.js 22 oder neuer. Beim ersten Mal braucht Playwright seinen Browser:
 
 ```
 npx playwright install chromium-headless-shell
 npx spurlos <url>
 ```
+
+| Option | |
+|---|---|
+| `--lang de\|en` | Sprache des Berichts, Standard `de` |
+| `--json` | vollständiges Ergebnis als JSON |
+| `--user-agent <kennung>` | eigene Browserkennung für alle Aufrufe |
 
 ## Ampel
 
@@ -66,6 +78,22 @@ npx spurlos <url>
 Geprüft werden bei den Headern `Content-Security-Policy`, `X-Frame-Options` (oder `frame-ancestors` in der CSP), `X-Content-Type-Options: nosniff`, `Referrer-Policy` und `Permissions-Policy`. Impressum und Datenschutzerklärung erkennt spurlos am Linktext oder an der Adresse, auf Deutsch und Englisch.
 
 Subdomains zählen zur eigenen Seite (`cdn.firma.de` gehört zu `www.firma.de`), dabei gilt die Public Suffix List (`firma.co.uk`).
+
+## Wie spurlos aufruft
+
+Die Seite selbst öffnet spurlos als normaler Chrome und hängt seinen Namen an die Kennung an:
+
+```
+Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/159.0.0.0 Safari/537.36 spurlos/0.1.0
+```
+
+„HeadlessChrome“ fehlt darin mit Absicht, auch in den Client Hints (`sec-ch-ua`). Viele Cookie-Banner und Tracker laden für Aufrufe, die sie für Bots halten, gar nicht erst. spurlos würde dann eine saubere Seite melden, während echte Besucher getrackt werden. Verstecken will sich spurlos trotzdem nicht: Der eigene Name steht in jeder Kennung, und `navigator.webdriver` bleibt `true`.
+
+Impressum, Datenschutzerklärung und die Weiterleitung von http fragt spurlos offen als Bot ab, denn dabei ändert eine Bot-Erkennung nichts:
+
+```
+spurlos/0.1.0 (+https://github.com/mmohrx/spurlos)
+```
 
 ## In der CI
 

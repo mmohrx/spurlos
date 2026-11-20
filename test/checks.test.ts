@@ -2,7 +2,7 @@ import { describe, expect, test } from 'vitest'
 import { cookies, forms, headers, https, legal, legalLinks, serviceOfCookie, serviceOfHost, thirdParty } from '../src/checks.ts'
 import type { Scan } from '../src/scan.ts'
 
-const base: Scan = { url: 'https://www.firma.de/', finalUrl: 'https://www.firma.de/', settled: true, requests: [], cookies: [], storage: [], headers: {}, links: [], legal: [], forms: [] }
+const base: Scan = { url: 'https://www.firma.de/', finalUrl: 'https://www.firma.de/', settled: true, requests: [], cookies: [], storage: [], headers: {}, links: [], legal: [], forms: [], userAgent: 'test' }
 const req = (host: string) => ({ url: `https://${host}/x`, host, type: 'script' })
 
 describe('thirdParty', () => {

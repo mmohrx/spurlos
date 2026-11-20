@@ -1,5 +1,56 @@
-import { chromium, type Browser, type BrowserContext } from 'playwright'
+import { readFileSync } from 'node:fs'
+import { chromium, type Browser, type BrowserContext, type Page } from 'playwright'
 import { legalLinks } from './checks.ts'
+
+// src/ and dist/ both sit next to package.json
+export const VERSION: string = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')).version
+const HOME = 'https://github.com/mmohrx/spurlos'
+
+/** Open about itself, for the requests where a bot check changes nothing: the legal pages and the http probe. */
+export const BOT_AGENT = `spurlos/${VERSION} (+${HOME})`
+
+const PLATFORM: Record<string, string> = {
+  darwin: 'Macintosh; Intel Mac OS X 10_15_7',
+  win32: 'Windows NT 10.0; Win64; x64',
+}
+
+/**
+ * For the page itself: a regular Chrome, with spurlos added but no URL. Many cookie banners and trackers stay away
+ * from what they take for a bot – HeadlessChrome or a URL in the user agent – and the scan would miss what real
+ * visitors get. The page still sees spurlos in its logs.
+ */
+const CH_PLATFORM: Record<string, string> = { darwin: 'macOS', win32: 'Windows' }
+
+/**
+ * Chromium still names itself HeadlessChrome in its client hints (sec-ch-ua, navigator.userAgentData), whatever the
+ * user agent says; this sets them to plain Chromium, to match. navigator.webdriver stays true on purpose: spurlos
+ * does not pretend to be a person.
+ */
+async function plainBrands(context: BrowserContext, page: Page, userAgent: string, chromeVersion: string) {
+  const major = chromeVersion.split('.')[0] ?? ''
+  const cdp = await context.newCDPSession(page)
+  await cdp.send('Emulation.setUserAgentOverride', {
+    userAgent,
+    acceptLanguage: 'de-DE,de;q=0.9,en;q=0.8',
+    userAgentMetadata: {
+      brands: [
+        { brand: 'Chromium', version: major },
+        { brand: 'Not/A)Brand', version: '8' },
+      ],
+      fullVersion: chromeVersion,
+      platform: CH_PLATFORM[process.platform] ?? 'Linux',
+      platformVersion: '',
+      architecture: '',
+      model: '',
+      mobile: false,
+    },
+  })
+}
+
+export function browserAgent(chromeVersion: string, platform = process.platform): string {
+  const major = chromeVersion.split('.')[0]
+  return `Mozilla/5.0 (${PLATFORM[platform] ?? 'X11; Linux x86_64'}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${major}.0.0.0 Safari/537.36 spurlos/${VERSION}`
+}
 
 export type Request = { url: string; host: string; type: string }
 export type Cookie = { name: string; domain: string; expires: number }
@@ -27,6 +78,8 @@ export type Scan = {
   /** the links that look like Impressum or Datenschutz, each opened on its own */
   legal: Visit[]
   forms: Form[]
+  /** the user agent the page was opened with */
+  userAgent: string
 }
 
 export type ScanOptions = {
@@ -36,15 +89,17 @@ export type ScanOptions = {
   setup?: (context: BrowserContext) => Promise<void>
   /** hook for tests: the fetch used to ask the server about http:// */
   fetch?: typeof fetch
+  /** replaces the user agent of every request spurlos makes */
+  userAgent?: string
 }
 
 /**
  * Asks the server directly, not the browser: Chromium upgrades http:// to https:// on its own,
  * which would make a server without redirect look as if it had one.
  */
-async function probeHttp(url: string, f: typeof fetch): Promise<Visit> {
+async function probeHttp(url: string, f: typeof fetch, userAgent: string): Promise<Visit> {
   try {
-    const r = await f(url, { redirect: 'follow', signal: AbortSignal.timeout(15_000) })
+    const r = await f(url, { redirect: 'follow', headers: { 'user-agent': userAgent }, signal: AbortSignal.timeout(15_000) })
     await r.body?.cancel()
     return { url, status: r.status, finalUrl: r.url || url }
   } catch (e) {
@@ -57,7 +112,8 @@ async function probeHttp(url: string, f: typeof fetch): Promise<Visit> {
 export async function scan(url: string, options: ScanOptions = {}): Promise<Scan> {
   const browser = await chromium.launch()
   try {
-    const context = await browser.newContext({ locale: 'de-DE' })
+    const userAgent = options.userAgent ?? browserAgent(browser.version())
+    const context = await browser.newContext({ locale: 'de-DE', userAgent })
     await options.setup?.(context)
 
     const requests: Request[] = []
@@ -67,6 +123,7 @@ export async function scan(url: string, options: ScanOptions = {}): Promise<Scan
     })
 
     const page = await context.newPage()
+    if (!options.userAgent) await plainBrands(context, page, userAgent, browser.version())
     const response = await page.goto(url, { waitUntil: 'load' })
     if (!response) throw new Error('keine Antwort erhalten')
     const settled = await page
@@ -104,9 +161,10 @@ export async function scan(url: string, options: ScanOptions = {}): Promise<Scan
       links,
       legal: [],
       forms,
+      userAgent,
     }
     if (tls?.validTo) result.certificate = { validTo: tls.validTo, issuer: tls.issuer ?? '' }
-    if (finalUrl.startsWith('https:')) result.http = await probeHttp(finalUrl.replace(/^https:/, 'http:'), options.fetch ?? fetch)
+    if (finalUrl.startsWith('https:')) result.http = await probeHttp(finalUrl.replace(/^https:/, 'http:'), options.fetch ?? fetch, options.userAgent ?? BOT_AGENT)
     for (const l of legalLinks(links)) result.legal.push(await visitor(l.href))
     return result
   } finally {
@@ -116,7 +174,7 @@ export async function scan(url: string, options: ScanOptions = {}): Promise<Scan
 
 /** A second, separate browser for opening single URLs: only the documents load, nothing of it counts towards the scan. */
 async function documentsOnly(browser: Browser, options: ScanOptions) {
-  const context = await browser.newContext()
+  const context = await browser.newContext({ userAgent: options.userAgent ?? BOT_AGENT })
   await context.route('**/*', route => (route.request().resourceType() === 'document' ? route.continue() : route.abort()))
   // registered after the filter, so the tests' routes take precedence over it
   await options.setup?.(context)

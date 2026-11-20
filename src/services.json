@@ -1,0 +1,23 @@
+[
+  { "name": "Google Fonts", "category": "fonts", "hosts": ["fonts.googleapis.com", "fonts.gstatic.com"] },
+  { "name": "Adobe Fonts", "category": "fonts", "hosts": ["use.typekit.net", "p.typekit.net"] },
+  { "name": "Bunny Fonts", "category": "fonts", "hosts": ["fonts.bunny.net"] },
+  { "name": "Google Analytics", "category": "tracking", "hosts": ["google-analytics.com", "analytics.google.com"], "cookies": ["_ga", "_gid", "_gat"] },
+  { "name": "Google Tag Manager", "category": "tracking", "hosts": ["googletagmanager.com"] },
+  { "name": "Google Ads", "category": "tracking", "hosts": ["doubleclick.net", "googleadservices.com", "googlesyndication.com"], "cookies": ["_gcl_", "IDE"] },
+  { "name": "Meta Pixel", "category": "tracking", "hosts": ["connect.facebook.net"], "cookies": ["_fbp", "_fbc"] },
+  { "name": "LinkedIn Insight", "category": "tracking", "hosts": ["snap.licdn.com", "px.ads.linkedin.com"], "cookies": ["li_", "bcookie"] },
+  { "name": "Hotjar", "category": "tracking", "hosts": ["hotjar.com", "hotjar.io"], "cookies": ["_hj"] },
+  { "name": "Microsoft Clarity", "category": "tracking", "hosts": ["clarity.ms"], "cookies": ["_clck", "_clsk"] },
+  { "name": "Matomo", "category": "tracking", "hosts": ["matomo.cloud"], "cookies": ["_pk_"] },
+  { "name": "YouTube", "category": "video", "hosts": ["youtube.com", "youtube-nocookie.com", "ytimg.com", "googlevideo.com"] },
+  { "name": "Vimeo", "category": "video", "hosts": ["vimeo.com", "vimeocdn.com"] },
+  { "name": "Google Maps", "category": "maps", "hosts": ["maps.googleapis.com", "maps.gstatic.com", "maps.google.com"] },
+  { "name": "Google reCAPTCHA", "category": "captcha", "hosts": ["recaptcha.net"] },
+  { "name": "Google (allgemein)", "category": "other", "hosts": ["google.com", "gstatic.com", "googleapis.com"] },
+  { "name": "jsDelivr", "category": "cdn", "hosts": ["cdn.jsdelivr.net"] },
+  { "name": "cdnjs (Cloudflare)", "category": "cdn", "hosts": ["cdnjs.cloudflare.com"] },
+  { "name": "unpkg", "category": "cdn", "hosts": ["unpkg.com"] },
+  { "name": "jQuery CDN", "category": "cdn", "hosts": ["code.jquery.com"] },
+  { "name": "Font Awesome", "category": "cdn", "hosts": ["kit.fontawesome.com", "use.fontawesome.com", "ka-f.fontawesome.com"] }
+]

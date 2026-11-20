@@ -1,0 +1,32 @@
+{
+  "name": "spurlos",
+  "version": "0.1.0",
+  "description": "Ruft eine Website wie ein neuer Besucher auf und zeigt, was vor jedem Klick an fremde Server geht und welche Cookies gesetzt werden.",
+  "type": "module",
+  "license": "MIT",
+  "author": "Martin Mohr",
+  "bin": {
+    "spurlos": "dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "start": "node --experimental-strip-types src/cli.ts"
+  },
+  "dependencies": {
+    "playwright": "^1.65.1",
+    "tldts": "^7.5.4"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "typescript": "^7.0.2",
+    "vitest": "^5.1.1"
+  }
+}

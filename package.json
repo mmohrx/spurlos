@@ -2,9 +2,28 @@
   "name": "spurlos",
   "version": "0.1.0",
   "description": "Ruft eine Website wie ein neuer Besucher auf und zeigt, was vor jedem Klick an fremde Server geht und welche Cookies gesetzt werden.",
+  "keywords": [
+    "privacy",
+    "gdpr",
+    "dsgvo",
+    "cookies",
+    "website-checker",
+    "security-headers",
+    "third-party",
+    "playwright",
+    "cli"
+  ],
   "type": "module",
   "license": "MIT",
   "author": "Martin Mohr",
+  "homepage": "https://github.com/mmohrx/spurlos#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mmohrx/spurlos.git"
+  },
+  "bugs": {
+    "url": "https://github.com/mmohrx/spurlos/issues"
+  },
   "bin": {
     "spurlos": "dist/cli.js"
   },
@@ -19,7 +38,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "start": "node --experimental-strip-types src/cli.ts",
-    "examples": "node --experimental-strip-types scripts/examples.ts"
+    "examples": "node --experimental-strip-types scripts/examples.ts",
+    "logo": "node scripts/logo.mjs"
   },
   "dependencies": {
     "playwright": "^1.65.1",

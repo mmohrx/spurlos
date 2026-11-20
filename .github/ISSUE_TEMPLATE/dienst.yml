@@ -1,0 +1,28 @@
+name: Dienst fehlt / Missing service
+description: Ein Host oder Cookie wird als „unbekannt“ gemeldet, obwohl er zu einem bekannten Dienst gehört.
+labels: [dienst]
+body:
+  - type: input
+    id: name
+    attributes:
+      label: Dienst / Service
+      placeholder: Matomo
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: Hosts, Cookies oder Speichereinträge / Hosts, cookies or storage keys
+      placeholder: |
+        matomo.cloud
+        Cookie _pk_id
+    validations:
+      required: true
+  - type: input
+    id: source
+    attributes:
+      label: Quelle / Source
+      description: Doku des Anbieters oder eine andere Stelle, die das belegt.
+  - type: markdown
+    attributes:
+      value: Noch schneller geht ein Pull Request mit einer Zeile in `src/services.json`, siehe CONTRIBUTING.md.

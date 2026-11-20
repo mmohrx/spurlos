@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Sicherheitslücke melden / Report a vulnerability
+    url: https://github.com/mmohrx/spurlos/security/advisories/new
+    about: Bitte privat melden, nicht als Issue. Please report privately, not as an issue.

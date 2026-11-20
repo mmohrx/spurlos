@@ -1,0 +1,28 @@
+name: Fehler / Bug
+description: spurlos meldet etwas Falsches, bricht ab oder übersieht etwas.
+labels: [fehler]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: Was ist passiert, was hast du erwartet? / What happened, what did you expect?
+    validations:
+      required: true
+  - type: input
+    id: command
+    attributes:
+      label: Aufruf / Command
+      placeholder: spurlos beispiel-firma.de --lang en
+    validations:
+      required: true
+  - type: textarea
+    id: output
+    attributes:
+      label: Ausgabe / Output
+      description: Am besten von `--json`. Kürze, was du nicht teilen magst.
+      render: text
+  - type: input
+    id: version
+    attributes:
+      label: Version und Umgebung / Version and environment
+      placeholder: spurlos 0.1.0, Node 24, macOS (oder Docker)

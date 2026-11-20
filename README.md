@@ -1,4 +1,9 @@
-# spurlos
+<h1>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/logo-dark.svg">
+    <img src="assets/logo-light.svg" alt="spurlos" height="64">
+  </picture>
+</h1>
 
 Ruft eine Website so auf wie ein neuer Besucher, der noch nichts angeklickt hat, und zeigt dir:
 
@@ -112,6 +117,10 @@ pnpm typecheck
 pnpm build       # nach dist/
 node src/cli.ts <url>
 ```
+
+## Mitmachen
+
+Fehlt ein Dienst, stimmt eine Ampel nicht oder hast du eine Idee: In [`CONTRIBUTING.md`](CONTRIBUTING.md) steht, wie du beiträgst. Sicherheitslücken bitte nicht als Issue, sondern wie in [`SECURITY.md`](SECURITY.md) beschrieben melden.
 
 ## Lizenz
 

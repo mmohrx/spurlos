@@ -11,42 +11,10 @@ Ruft eine Website so auf wie ein neuer Besucher, der noch nichts angeklickt hat,
 - ob Header oder Seite **die Software dahinter samt Version** verraten, etwa `X-Powered-By: PHP/8.1.2` oder `WordPress 6.2`.
 
 ```
-$ npx spurlos beispiel-firma.de
-
-spurlos 0.1.0  https://beispiel-firma.de/
-1 Mangel · 3 Hinweise · 3 in Ordnung
-
-🔴 Fremde Server              2
-  ├─ 🔴 fonts.googleapis.com – Google Fonts (1 Anfrage)
-  └─ 🔴 fonts.gstatic.com – Google Fonts (2 Anfragen)
-     → Jeder davon erfährt beim Aufruf die IP-Adresse des Besuchers, noch bevor
-       er etwas anklickt.
-
-🟡 Cookies und Speicher       2 Cookies, 0 Einträge im Browser-Speicher
-  ├─ 🟢 Cookie PHPSESSID (beispiel-firma.de) – eigen, Session, bis Sitzungsende
-  └─ 🟡 Cookie warenkorb (beispiel-firma.de) – eigen, unbekannt, 30 Tage
-     → Gesetzt beim ersten Aufruf, bevor jemand etwas anklickt.
-     → Keine bekannten Tracker. Prüfe bei den gelb markierten Einträgen, ob sie
-       technisch nötig sind.
-
-🟡 HTTPS                      mit Hinweisen
-  ├─ 🟢 Zertifikat gültig für noch 61 Tage.
-  ├─ 🟢 http:// leitet auf https:// weiter.
-  └─ 🟡 Kein HSTS-Header (Strict-Transport-Security): Browser merken sich nicht, dass sie nur https nutzen sollen.
-
-🟡 Sicherheits-Header         2 von 5 fehlen
-  ├─ 🟡 Content-Security-Policy fehlt
-  └─ 🟡 Permissions-Policy fehlt
-
-🟢 Impressum und Datenschutz  beide verlinkt und erreichbar
-🟢 Formulare                  1
-🟢 Verratene Details          keine
-
-Details auch zu den grünen Prüfungen: --verbose
-Technische Vorprüfung – keine Rechtsberatung und keine Aussage darüber, ob die Seite DSGVO-konform ist.
+npx spurlos beispiel-firma.de
 ```
 
-Im Terminal sieht das so aus, links eine Seite mit Mängeln, rechts eine saubere:
+Links eine Seite mit Mängeln, rechts eine saubere:
 
 ![Farbige Ausgabe von spurlos für eine Seite mit Mängeln und eine saubere Seite](examples/vorschau.png)
 

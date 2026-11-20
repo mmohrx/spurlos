@@ -4,6 +4,10 @@ Ruft eine Website so auf wie ein neuer Besucher, der noch nichts angeklickt hat,
 
 - **welche fremden Server** dabei angefragt werden, etwa Google Fonts, Tag Manager, YouTube oder ein CDN. Jeder davon erfährt die IP-Adresse des Besuchers.
 - **welche Cookies und Einträge im Browser-Speicher** schon vor jeder Einwilligung gesetzt sind, und ob darunter bekannte Tracker oder Cookies fremder Domains sind.
+- ob **Impressum und Datenschutzerklärung** verlinkt sind und sich öffnen lassen.
+- ob **HTTPS** sauber eingerichtet ist: Zertifikat, Weiterleitung von http, HSTS.
+- welche **Sicherheits-Header** fehlen.
+- wohin **Formulare** senden: verschlüsselt an die eigene Seite, an einen fremden Server oder unverschlüsselt.
 
 ```
 $ npx spurlos beispiel-firma.de
@@ -18,10 +22,26 @@ spurlos – https://beispiel-firma.de/
    Cookie PHPSESSID (beispiel-firma.de) – eigen, bis Sitzungsende
    Nur eigene Einträge ohne bekannten Tracker. Prüfe, ob sie technisch nötig sind.
 
+🟢 Impressum und Datenschutz: beide verlinkt und erreichbar.
+   Impressum: „Impressum“ → https://beispiel-firma.de/impressum – erreichbar
+   Datenschutzerklärung: „Datenschutz“ → https://beispiel-firma.de/datenschutz – erreichbar
+
+🟡 HTTPS: mit Hinweisen.
+   Zertifikat gültig für noch 61 Tage.
+   http:// leitet auf https:// weiter.
+   Kein HSTS-Header (Strict-Transport-Security): Browser merken sich nicht, dass sie nur https nutzen sollen.
+
+🟡 Sicherheits-Header: 2 von 5 fehlen.
+   Content-Security-Policy fehlt
+   Permissions-Policy fehlt
+
+🟢 Formulare: 1.
+   POST https://beispiel-firma.de/kontakt – sendet verschlüsselt an die eigene Seite
+
 Technische Vorprüfung – keine Rechtsberatung und keine Aussage darüber, ob die Seite DSGVO-konform ist.
 ```
 
-spurlos nutzt einen echten Browser (Chromium über Playwright). Es findet also auch Anfragen und Cookies, die erst per JavaScript entstehen.
+spurlos nutzt einen echten Browser (Chromium über Playwright). Es findet also auch Anfragen und Cookies, die erst per JavaScript entstehen. Impressum, Datenschutzerklärung und die http-Adresse ruft es getrennt davon auf; diese Aufrufe zählen nicht zu den Anfragen und Cookies der Seite. Ob http auf https weiterleitet, fragt es direkt beim Server und nicht über den Browser nach, denn Chromium wechselt von sich aus auf https.
 
 ## Installation
 
@@ -38,6 +58,12 @@ npx spurlos <url>
 |---|---|---|---|
 | Fremde Server | keine | – | mindestens eine Anfrage an eine andere Domain |
 | Cookies und Speicher | nichts gesetzt | nur eigene Cookies oder Einträge ohne bekannten Tracker | Cookie einer fremden Domain oder eines bekannten Trackers |
+| Impressum und Datenschutz | beide verlinkt und erreichbar | – | ein Link fehlt oder die Seite antwortet mit einem Fehler |
+| HTTPS | https, http leitet weiter, HSTS, Zertifikat noch 14 Tage oder länger gültig | kein HSTS, Zertifikat weniger als 14 Tage gültig | kein https, http ohne Weiterleitung, Zertifikat weniger als 7 Tage gültig oder abgelaufen |
+| Sicherheits-Header | alle gesetzt | einer oder mehrere fehlen | – |
+| Formulare | keine oder alle senden verschlüsselt an die eigene Seite | eines sendet an einen fremden Server | eines sendet unverschlüsselt über http |
+
+Geprüft werden bei den Headern `Content-Security-Policy`, `X-Frame-Options` (oder `frame-ancestors` in der CSP), `X-Content-Type-Options: nosniff`, `Referrer-Policy` und `Permissions-Policy`. Impressum und Datenschutzerklärung erkennt spurlos am Linktext oder an der Adresse, auf Deutsch und Englisch.
 
 Subdomains zählen zur eigenen Seite (`cdn.firma.de` gehört zu `www.firma.de`), dabei gilt die Public Suffix List (`firma.co.uk`).
 
@@ -56,7 +82,7 @@ Welche Hosts und Cookies zu welchem Dienst gehören, steht in [`src/services.jso
 ## Was spurlos nicht tut
 
 - Es klickt keinen Cookie-Banner an. Geprüft wird der Zustand vor jeder Entscheidung des Besuchers.
-- Es bewertet keine Texte, also weder Impressum noch Datenschutzerklärung.
+- Es liest Impressum und Datenschutzerklärung nicht, sondern prüft nur, ob sie verlinkt und erreichbar sind.
 - Es gibt keine Rechtsberatung. Ein grüner Bericht heißt nicht, dass eine Seite DSGVO-konform ist, und ein roter nicht, dass sie es nicht ist.
 
 ## Entwickeln

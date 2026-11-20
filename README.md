@@ -13,33 +13,36 @@ Ruft eine Website so auf wie ein neuer Besucher, der noch nichts angeklickt hat,
 ```
 $ npx spurlos beispiel-firma.de
 
-spurlos – https://beispiel-firma.de/
+spurlos 0.1.0  https://beispiel-firma.de/
+1 Mangel · 3 Hinweise · 3 in Ordnung
 
-🔴 Fremde Server: 2. Jeder davon erfährt beim Aufruf die IP-Adresse des Besuchers, noch bevor er etwas anklickt.
-   🔴 fonts.googleapis.com – Google Fonts (1 Anfrage)
-   🔴 fonts.gstatic.com – Google Fonts (2 Anfragen)
+🔴 Fremde Server              2
+  ├─ 🔴 fonts.googleapis.com – Google Fonts (1 Anfrage)
+  └─ 🔴 fonts.gstatic.com – Google Fonts (2 Anfragen)
+     → Jeder davon erfährt beim Aufruf die IP-Adresse des Besuchers, noch bevor
+       er etwas anklickt.
 
-🟡 Cookies und Speicher vor jedem Klick: 2 Cookies, 0 Einträge im Browser-Speicher.
-   🟢 Cookie PHPSESSID (beispiel-firma.de) – eigen, Session, bis Sitzungsende
-   🟡 Cookie warenkorb (beispiel-firma.de) – eigen, unbekannt, 30 Tage
-      Keine bekannten Tracker. Prüfe bei den gelb markierten Einträgen, ob sie technisch nötig sind.
+🟡 Cookies und Speicher       2 Cookies, 0 Einträge im Browser-Speicher
+  ├─ 🟢 Cookie PHPSESSID (beispiel-firma.de) – eigen, Session, bis Sitzungsende
+  └─ 🟡 Cookie warenkorb (beispiel-firma.de) – eigen, unbekannt, 30 Tage
+     → Gesetzt beim ersten Aufruf, bevor jemand etwas anklickt.
+     → Keine bekannten Tracker. Prüfe bei den gelb markierten Einträgen, ob sie
+       technisch nötig sind.
 
-🟢 Impressum und Datenschutz: beide verlinkt und erreichbar.
-   🟢 Impressum: „Impressum“ → https://beispiel-firma.de/impressum – erreichbar
-   🟢 Datenschutzerklärung: „Datenschutz“ → https://beispiel-firma.de/datenschutz – erreichbar
+🟡 HTTPS                      mit Hinweisen
+  ├─ 🟢 Zertifikat gültig für noch 61 Tage.
+  ├─ 🟢 http:// leitet auf https:// weiter.
+  └─ 🟡 Kein HSTS-Header (Strict-Transport-Security): Browser merken sich nicht, dass sie nur https nutzen sollen.
 
-🟡 HTTPS: mit Hinweisen.
-   🟢 Zertifikat gültig für noch 61 Tage.
-   🟢 http:// leitet auf https:// weiter.
-   🟡 Kein HSTS-Header (Strict-Transport-Security): Browser merken sich nicht, dass sie nur https nutzen sollen.
+🟡 Sicherheits-Header         2 von 5 fehlen
+  ├─ 🟡 Content-Security-Policy fehlt
+  └─ 🟡 Permissions-Policy fehlt
 
-🟡 Sicherheits-Header: 2 von 5 fehlen.
-   🟡 Content-Security-Policy fehlt
-   🟡 Permissions-Policy fehlt
+🟢 Impressum und Datenschutz  beide verlinkt und erreichbar
+🟢 Formulare                  1
+🟢 Verratene Details          keine
 
-🟢 Formulare: 1.
-   🟢 POST https://beispiel-firma.de/kontakt – sendet verschlüsselt an die eigene Seite
-
+Details auch zu den grünen Prüfungen: --verbose
 Technische Vorprüfung – keine Rechtsberatung und keine Aussage darüber, ob die Seite DSGVO-konform ist.
 ```
 
@@ -63,8 +66,11 @@ npx spurlos <url>
 | Option | |
 |---|---|
 | `--lang de\|en` | Sprache des Berichts, Standard `de` |
+| `--verbose`, `-v` | Details auch zu den grünen Prüfungen |
 | `--json` | vollständiges Ergebnis als JSON |
 | `--user-agent <kennung>` | eigene Browserkennung für alle Aufrufe |
+
+Oben steht die Bilanz, darunter die Prüfungen mit den roten zuerst. Rote und gelbe Prüfungen zeigen jeden Befund, grüne nur eine Zeile. Im Terminal ist der Bericht farbig. Leitest du die Ausgabe in eine Datei oder eine Pipe um oder setzt `NO_COLOR`, bleibt es reiner Text.
 
 ## Ampel
 

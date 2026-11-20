@@ -79,6 +79,14 @@ describe('scan', { timeout: 30_000 }, () => {
     expect(pick(results, 'https').http).toBe('redirects')
     expect(s.legal.map(v => v.url)).toEqual([`${SITE}/impressum`, `${SITE}/datenschutz`])
     expect(s).toMatchObject({ metaCsp: "default-src 'self'", metaReferrer: 'no-referrer' })
+
+    // green checks take one line each; their findings show with verbose
+    const short = text(s, results)
+    expect(short).not.toContain('Impressum: „Impressum“')
+    expect(short).toContain('--verbose')
+    const long = text(s, results, 'de', { verbose: true })
+    expect(long).toContain('Impressum: „Impressum“')
+    expect(long).not.toContain('--verbose')
   })
 
   test('a page with fonts, tag manager, video, cookies and leaky forms', async () => {
@@ -125,6 +133,13 @@ describe('scan', { timeout: 30_000 }, () => {
     expect(report).toContain('🟡 localStorage: theme – unbekannt')
     expect(report).toContain('Datenschutzerklärung: kein Link auf der Seite gefunden')
     expect(report).toContain('http://shop.example/newsletter – sendet unverschlüsselt über http')
+    // the summary comes first, the worst checks lead, and without color the text holds no escape codes
+    const lines = report.split('\n')
+    expect(lines.slice(0, 3)).toContainEqual(expect.stringMatching(/^\d+ Mängel · \d+ Hinweise?$/))
+    const lights = lines.filter(l => /^\S/.test(l) && /^(🔴|🟡|🟢)/.test(l)).map(l => l.slice(0, 2))
+    expect(lights).toEqual([...lights].sort((a, b) => ['🔴', '🟡', '🟢'].indexOf(a) - ['🔴', '🟡', '🟢'].indexOf(b)))
+    expect(report).not.toContain('\x1b[')
+    expect(text(s, results, 'de', { color: true })).toContain('\x1b[1m')
 
     const english = text(s, results, 'en')
     expect(english).toContain('Privacy policy: no link found on the page')

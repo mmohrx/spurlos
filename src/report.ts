@@ -1,4 +1,4 @@
-import { certLevel, cookieLevel, formLevel, httpLevel, legalLevel, STORAGE_LEVEL, type FormFinding, type HttpRedirect, type LegalKind, type Level, type Result } from './checks.ts'
+import { certLevel, cookieLevel, disclosureLevel, formLevel, httpLevel, legalLevel, STORAGE_LEVEL, type FormFinding, type HttpRedirect, type LegalKind, type Level, type Result } from './checks.ts'
 import type { Scan } from './scan.ts'
 
 export type Lang = 'de' | 'en'
@@ -25,6 +25,16 @@ const de = {
   days: (n: number) => plural(n, 'Tag', 'Tage'),
   cookiesReview: 'Keine bekannten Tracker. Prüfe bei den gelb markierten Einträgen, ob sie technisch nötig sind.',
   unknown: 'unbekannt',
+  cookieMissing: (attrs: string[]) => `ohne ${attrs.join(' und ')}`,
+  cookieMissingNote: 'Secure: Das Cookie geht auch über unverschlüsseltes http. HttpOnly: Skripte auf der Seite können die Sitzung auslesen.',
+  disclosureNone: 'Verratene Details: keine. Weder Header noch Seite nennen die Software dahinter.',
+  disclosure: (versions: number) =>
+    versions
+      ? `Verratene Details: ${versions === 1 ? 'eine Angabe nennt' : `${versions} Angaben nennen`} eine Versionsnummer. Damit lässt sich gezielt nach bekannten Lücken suchen.`
+      : 'Verratene Details: nur Namen, keine Versionen.',
+  disclosureHeader: (name: string, value: string) => `Header ${name}: ${value}`,
+  disclosureMeta: (value: string) => `<meta name="generator">: ${value}`,
+  disclosureHint: 'Versionsnummern lassen sich meist abschalten, etwa mit expose_php = Off in PHP oder server_tokens off in nginx.',
   cookiesNecessary: 'Nur bekannte Sitzungs- und Sicherheits-Cookies, wie sie Frameworks und Proxys für den Betrieb setzen.',
 
   legal: (green: boolean) => `Impressum und Datenschutz: ${green ? 'beide verlinkt und erreichbar.' : 'nicht vollständig.'}`,
@@ -79,6 +89,16 @@ const en: typeof de = {
   days: n => plural(n, 'day', 'days'),
   cookiesReview: 'No known trackers. For the entries marked yellow, check whether they are technically necessary.',
   unknown: 'unknown',
+  cookieMissing: attrs => `without ${attrs.join(' and ')}`,
+  cookieMissingNote: 'Secure: the cookie also travels over unencrypted http. HttpOnly: scripts on the page can read the session.',
+  disclosureNone: 'Software details: none. Neither headers nor the page name the software behind it.',
+  disclosure: versions =>
+    versions
+      ? `Software details: ${versions === 1 ? 'one entry names' : `${versions} entries name`} a version number. That allows a targeted search for known holes.`
+      : 'Software details: names only, no versions.',
+  disclosureHeader: (name, value) => `Header ${name}: ${value}`,
+  disclosureMeta: value => `<meta name="generator">: ${value}`,
+  disclosureHint: 'Version numbers can usually be switched off, e.g. with expose_php = Off in PHP or server_tokens off in nginx.',
   cookiesNecessary: 'Only known session and security cookies, as frameworks and proxies set them to run a site.',
 
   legal: green => `Legal notice and privacy policy: ${green ? 'both linked and reachable.' : 'incomplete.'}`,
@@ -140,13 +160,20 @@ function section(t: typeof de, r: Result, now: number): string[] {
       if (!r.cookies.length && !r.storage.length) return [head(t.cookiesNone)]
       const list: Item[] = [
         ...r.cookies.map((c): Item => {
-          const notes = [c.thirdParty ? t.cookieForeign : t.cookieOwn, c.service?.name ?? t.unknown, lifetime(t, c.expires, now)]
+          const notes = [
+            c.thirdParty ? t.cookieForeign : t.cookieOwn,
+            c.service?.name ?? t.unknown,
+            lifetime(t, c.expires, now),
+            ...(c.missing.length ? [t.cookieMissing(c.missing)] : []),
+          ]
           return [cookieLevel(c), `Cookie ${c.name} (${c.domain}) – ${notes.join(', ')}`]
         }),
         ...r.storage.map((s): Item => [STORAGE_LEVEL, `${s.area}: ${s.key} – ${t.unknown}`]),
       ]
-      const note = r.level === 'yellow' ? t.cookiesReview : r.level === 'green' ? t.cookiesNecessary : null
-      return [head(t.cookies(r.cookies.length, r.storage.length)), ...items(list, note ? [note] : [])]
+      const unknown = r.storage.length > 0 || r.cookies.some(c => !c.service && !c.thirdParty)
+      const note = unknown && r.level !== 'red' ? t.cookiesReview : r.level === 'green' ? t.cookiesNecessary : null
+      const notes = [...(note ? [note] : []), ...(r.cookies.some(c => c.missing.length) ? [t.cookieMissingNote] : [])]
+      return [head(t.cookies(r.cookies.length, r.storage.length)), ...items(list, notes)]
     }
 
     case 'legal':
@@ -177,6 +204,13 @@ function section(t: typeof de, r: Result, now: number): string[] {
     case 'headers':
       if (!r.missing.length) return [head(t.headersOk)]
       return [head(t.headersMissing(r.missing.length)), ...items(r.missing.map(m => ['yellow', t.headerMissing(m)]))]
+
+    case 'disclosure': {
+      if (!r.findings.length) return [head(t.disclosureNone)]
+      const versions = r.findings.filter(d => d.version).length
+      const list = r.findings.map((d): Item => [disclosureLevel(d), d.source === 'header' ? t.disclosureHeader(d.name, d.value) : t.disclosureMeta(d.value)])
+      return [head(t.disclosure(versions)), ...items(list, versions ? [t.disclosureHint] : [])]
+    }
 
     case 'forms':
       if (!r.forms.length) return [head(t.formsNone)]

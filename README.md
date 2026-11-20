@@ -8,6 +8,7 @@ Ruft eine Website so auf wie ein neuer Besucher, der noch nichts angeklickt hat,
 - ob **HTTPS** sauber eingerichtet ist: Zertifikat, Weiterleitung von http, HSTS.
 - welche **Sicherheits-Header** fehlen.
 - wohin **Formulare** senden: verschlüsselt an die eigene Seite, an einen fremden Server oder unverschlüsselt.
+- ob Header oder Seite **die Software dahinter samt Version** verraten, etwa `X-Powered-By: PHP/8.1.2` oder `WordPress 6.2`.
 
 ```
 $ npx spurlos beispiel-firma.de
@@ -70,11 +71,12 @@ npx spurlos <url>
 | Prüfung | 🟢 | 🟡 | 🔴 |
 |---|---|---|---|
 | Fremde Server | keine | – | mindestens eine Anfrage an eine andere Domain |
-| Cookies und Speicher | nichts gesetzt, oder nur bekannte Sitzungs- und Sicherheits-Cookies | eigene Cookies oder Einträge, die spurlos nicht kennt | Cookie einer fremden Domain oder eines bekannten Trackers |
+| Cookies und Speicher | nichts gesetzt, oder nur bekannte Sitzungs- und Sicherheits-Cookies | eigene Cookies oder Einträge, die spurlos nicht kennt; ein Cookie ohne `Secure` auf einer https-Seite; ein Sitzungs-Cookie ohne `HttpOnly` | Cookie einer fremden Domain oder eines bekannten Trackers |
 | Impressum und Datenschutz | beide verlinkt und erreichbar | – | ein Link fehlt oder die Seite antwortet mit einem Fehler |
 | HTTPS | https, http leitet weiter, HSTS, Zertifikat noch 14 Tage oder länger gültig | kein HSTS, über http antwortet nichts, Zertifikat weniger als 14 Tage gültig | kein https, http ohne Weiterleitung, Zertifikat weniger als 7 Tage gültig oder abgelaufen |
 | Sicherheits-Header | alle gesetzt | einer oder mehrere fehlen | – |
 | Formulare | keine oder alle senden verschlüsselt an die eigene Seite | eines sendet an einen fremden Server | eines sendet unverschlüsselt über http |
+| Verratene Details | nichts, oder nur der Name der Software | eine Versionsnummer in `Server`, `X-Powered-By`, `X-AspNet-Version`, `X-Generator` oder `<meta name="generator">` | – |
 
 Geprüft werden bei den Headern `Content-Security-Policy`, `X-Frame-Options` (oder `frame-ancestors` in der CSP), `X-Content-Type-Options: nosniff`, `Referrer-Policy` und `Permissions-Policy`. CSP und Referrer-Policy zählen auch als `<meta>`-Tag, für Hoster wie GitHub Pages, bei denen sich keine Header setzen lassen. Impressum und Datenschutzerklärung erkennt spurlos am Linktext oder an der Adresse, auf Deutsch und Englisch. Ein Link wie „Impressum & Datenschutz“ zählt für beides.
 
@@ -113,6 +115,8 @@ Exit-Code `0` ohne roten Befund, `1` mit rotem Befund, `2`, wenn die Seite sich 
 Welche Hosts und Cookies zu welchem Dienst gehören, steht in [`src/services.json`](src/services.json). Hosts gelten samt Subdomains, Cookie-Namen als Anfang (`_ga` deckt auch `_ga_ABC123` ab), mit `*` vorn als Ende (`*-session`). Fehlt ein Dienst, freue ich mich über einen Pull Request.
 
 ## Was spurlos nicht tut
+
+- Es sucht nicht aktiv nach Lücken. Ausgewertet wird nur, was ein normaler Aufruf der Seite ohnehin liefert; Adressen wie `/.env`, `/.git/` oder `/phpinfo.php` fragt spurlos nicht ab. So lässt es sich gegen jede Seite laufen, ohne sie abzuklopfen.
 
 - Es klickt keinen Cookie-Banner an. Geprüft wird der Zustand vor jeder Entscheidung des Besuchers.
 - Es liest Impressum und Datenschutzerklärung nicht, sondern prüft nur, ob sie verlinkt und erreichbar sind.

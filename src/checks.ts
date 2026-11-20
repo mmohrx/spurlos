@@ -3,10 +3,14 @@ import knownServices from './services.json' with { type: 'json' }
 import type { Cookie, Form, Link, Scan, Visit } from './scan.ts'
 
 export type Level = 'green' | 'yellow' | 'red'
-export type Service = { name: string; category: string; hosts: string[]; cookies?: string[] }
+/** httpOnly: its cookies hold a session and should be out of reach of JavaScript */
+export type Service = { name: string; category: string; hosts: string[]; cookies?: string[]; httpOnly?: boolean }
 
 export type ThirdParty = { host: string; service: Service | undefined; requests: number }
-export type CookieFinding = Cookie & { thirdParty: boolean; service: Service | undefined }
+/** missing: attributes the cookie should have – Secure on an https page, HttpOnly for a session cookie */
+export type CookieFinding = Cookie & { thirdParty: boolean; service: Service | undefined; missing: ('Secure' | 'HttpOnly')[] }
+/** a header or meta tag that names the software behind the page; version: it names its version too */
+export type Disclosure = { source: 'header' | 'meta'; name: string; value: string; version: boolean }
 export type LegalKind = 'impressum' | 'datenschutz'
 export type LegalPage = { kind: LegalKind; link?: Link; visit?: Visit }
 /** redirects: http sends on to https · no-redirect: the page answers over plain http · unreachable: nothing answers on http */
@@ -20,6 +24,7 @@ export type Result =
   | { check: 'https'; level: Level; https: boolean; certDaysLeft?: number; http?: HttpRedirect; hsts: boolean }
   | { check: 'headers'; level: Level; missing: string[] }
   | { check: 'forms'; level: Level; forms: FormFinding[] }
+  | { check: 'disclosure'; level: Level; findings: Disclosure[] }
 
 export const worst = (levels: Level[]): Level => (levels.includes('red') ? 'red' : levels.includes('yellow') ? 'yellow' : 'green')
 
@@ -62,9 +67,14 @@ const ok = (v: Visit | undefined) => v !== undefined && 'status' in v && v.statu
 
 // The level of each single finding; a check's level is the worst of its findings.
 
-/** A third-party cookie or a known tracker's is red, a known session or security cookie green, any other yellow. */
+/**
+ * A third-party cookie or a known tracker's is red; a known session or security cookie green, unless it lacks
+ * Secure or HttpOnly; any other yellow.
+ */
 export const cookieLevel = (c: CookieFinding): Level =>
-  c.thirdParty || (c.service && !isNecessary(c.service)) ? 'red' : isNecessary(c.service) ? 'green' : 'yellow'
+  c.thirdParty || (c.service && !isNecessary(c.service)) ? 'red' : isNecessary(c.service) && !c.missing.length ? 'green' : 'yellow'
+/** a version number tells an attacker which known holes to try; the bare name of the software is only a hint */
+export const disclosureLevel = (d: Disclosure): Level => (d.version ? 'yellow' : 'green')
 /** spurlos cannot tell what an app keeps in browser storage, so each entry wants a look. */
 export const STORAGE_LEVEL: Level = 'yellow'
 export const legalLevel = (p: LegalPage): Level => (ok(p.visit) ? 'green' : 'red')
@@ -80,7 +90,14 @@ export const formLevel = (f: FormFinding): Level => (f.problem === 'unencrypted'
  */
 export function cookies(scan: Scan): Result {
   const own = site(new URL(scan.finalUrl).hostname)
-  const found = scan.cookies.map(c => ({ ...c, thirdParty: site(c.domain) !== own, service: serviceOfCookie(c.name) }))
+  const https = scan.finalUrl.startsWith('https:')
+  const found = scan.cookies.map((c): CookieFinding => {
+    const service = serviceOfCookie(c.name)
+    const missing: CookieFinding['missing'] = []
+    if (https && !c.secure) missing.push('Secure')
+    if (service?.httpOnly && !c.httpOnly) missing.push('HttpOnly')
+    return { ...c, thirdParty: site(c.domain) !== own, service, missing }
+  })
   const level = worst([...found.map(cookieLevel), ...scan.storage.map((): Level => STORAGE_LEVEL)])
   return { check: 'cookies', level, cookies: found, storage: scan.storage }
 }
@@ -167,6 +184,19 @@ export function forms(scan: Scan): Result {
   return { check: 'forms', level, forms: found }
 }
 
+const DISCLOSING = ['server', 'x-powered-by', 'x-aspnet-version', 'x-aspnetmvc-version', 'x-generator']
+const VERSION_NUMBER = /\d+\.\d+/
+
+/** Headers and the generator meta tag that name the software behind the page – passive: only what the page sends anyway. */
+export function disclosure(scan: Scan): Result {
+  const findings: Disclosure[] = DISCLOSING.filter(h => scan.headers[h]).map(h => {
+    const value = scan.headers[h] ?? ''
+    return { source: 'header', name: h, value, version: VERSION_NUMBER.test(value) }
+  })
+  if (scan.generator) findings.push({ source: 'meta', name: 'generator', value: scan.generator, version: VERSION_NUMBER.test(scan.generator) })
+  return { check: 'disclosure', level: worst(findings.map(disclosureLevel)), findings }
+}
+
 export function runChecks(scan: Scan, now = Date.now()): Result[] {
-  return [thirdParty(scan), cookies(scan), legal(scan), https(scan, now), headers(scan), forms(scan)]
+  return [thirdParty(scan), cookies(scan), legal(scan), https(scan, now), headers(scan), forms(scan), disclosure(scan)]
 }

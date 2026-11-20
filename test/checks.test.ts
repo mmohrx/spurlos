@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { cookies, forms, headers, https, legal, legalLinks, serviceOfCookie, serviceOfHost, thirdParty } from '../src/checks.ts'
+import { cookies, disclosure, forms, headers, https, legal, legalLinks, serviceOfCookie, serviceOfHost, thirdParty } from '../src/checks.ts'
 import type { Scan } from '../src/scan.ts'
 
 const base: Scan = { url: 'https://www.firma.de/', finalUrl: 'https://www.firma.de/', settled: true, requests: [], cookies: [], storage: [], headers: {}, links: [], legal: [], forms: [], userAgent: 'test' }
@@ -47,7 +47,7 @@ describe('services', () => {
 })
 
 describe('cookies', () => {
-  const cookie = (name: string, domain = 'www.firma.de') => ({ name, domain, expires: -1 })
+  const cookie = (name: string, domain = 'www.firma.de', flags = { secure: true, httpOnly: true }) => ({ name, domain, expires: -1, ...flags })
 
   test('nothing set is green', () => {
     expect(cookies(base).level).toBe('green')
@@ -70,6 +70,21 @@ describe('cookies', () => {
 
   test('known tracking cookies are red, even when set on the own domain', () => {
     expect(cookies({ ...base, cookies: [cookie('_ga')] }).level).toBe('red')
+  })
+
+  test('a session cookie without HttpOnly or a cookie without Secure on https is yellow', () => {
+    const r = cookies({ ...base, cookies: [cookie('laravel_session', 'www.firma.de', { secure: true, httpOnly: false })] })
+    expect(r).toMatchObject({ level: 'yellow', cookies: [{ missing: ['HttpOnly'] }] })
+    expect(cookies({ ...base, cookies: [cookie('PHPSESSID', 'www.firma.de', { secure: false, httpOnly: true })] })).toMatchObject({
+      level: 'yellow',
+      cookies: [{ missing: ['Secure'] }],
+    })
+  })
+
+  test('XSRF-TOKEN may be read by scripts, and on http nobody can ask for Secure', () => {
+    expect(cookies({ ...base, cookies: [cookie('XSRF-TOKEN', 'www.firma.de', { secure: true, httpOnly: false })] }).level).toBe('green')
+    const http = { ...base, finalUrl: 'http://www.firma.de/' }
+    expect(cookies({ ...http, cookies: [cookie('PHPSESSID', 'www.firma.de', { secure: false, httpOnly: true })] }).level).toBe('green')
   })
 
   test('third-party cookies are red', () => {
@@ -181,5 +196,27 @@ describe('forms', () => {
   test('no forms, or only javascript ones, is green', () => {
     expect(forms(base).level).toBe('green')
     expect(forms({ ...base, forms: [form('javascript:void(0)')] })).toMatchObject({ level: 'green', forms: [] })
+  })
+})
+
+describe('disclosure', () => {
+  test('versions in headers or the generator tag are yellow, bare names green', () => {
+    const r = disclosure({
+      ...base,
+      headers: { server: 'Apache/2.4.41 (Ubuntu)', 'x-powered-by': 'PHP/8.1.2' },
+      generator: 'WordPress 6.2',
+    })
+    expect(r).toMatchObject({ level: 'yellow' })
+    if (r.check !== 'disclosure') throw new Error()
+    expect(r.findings.map(d => [d.name, d.version])).toEqual([
+      ['server', true],
+      ['x-powered-by', true],
+      ['generator', true],
+    ])
+    expect(disclosure({ ...base, headers: { server: 'nginx' } })).toMatchObject({ level: 'green', findings: [{ name: 'server', version: false }] })
+  })
+
+  test('nothing named is green', () => {
+    expect(disclosure({ ...base, headers: { 'content-type': 'text/html' } })).toEqual({ check: 'disclosure', level: 'green', findings: [] })
   })
 })

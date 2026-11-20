@@ -34,7 +34,11 @@ async function offline(context: BrowserContext) {
     try {
       const body = await readFile(new URL(file, sites))
       const headers: Record<string, string> =
-        file === 'tracked.html' ? { 'set-cookie': 'session=abc; Path=/; HttpOnly' } : file === 'clean.html' ? HARDENED : {}
+        file === 'tracked.html'
+          ? { 'set-cookie': 'session=abc; Path=/; HttpOnly', server: 'Apache/2.4.41 (Ubuntu)', 'x-powered-by': 'PHP/8.1.2' }
+          : file === 'clean.html'
+            ? HARDENED
+            : {}
       return route.fulfill({ status: 200, body, headers, contentType: file.endsWith('.js') ? 'text/javascript' : 'text/html' })
     } catch {
       return route.fulfill({ status: 404, body: '' })
@@ -70,6 +74,7 @@ describe('scan', { timeout: 30_000 }, () => {
       https: 'green',
       headers: 'green',
       forms: 'green',
+      disclosure: 'green',
     })
     expect(pick(results, 'https').http).toBe('redirects')
     expect(s.legal.map(v => v.url)).toEqual([`${SITE}/impressum`, `${SITE}/datenschutz`])
@@ -103,12 +108,20 @@ describe('scan', { timeout: 30_000 }, () => {
     expect(pick(results, 'https')).toMatchObject({ level: 'red', hsts: false, http: 'no-redirect' })
     expect(pick(results, 'headers').missing).toHaveLength(5)
     expect(pick(results, 'forms').forms.map(f => f.problem)).toEqual(['unencrypted', 'third-party'])
+    expect(pick(results, 'disclosure').findings.map(d => `${d.name}: ${d.value}`)).toEqual([
+      'server: Apache/2.4.41 (Ubuntu)',
+      'x-powered-by: PHP/8.1.2',
+      'generator: WordPress 6.2',
+    ])
+    // set without Secure on an https page
+    expect(pick(results, 'cookies').cookies.find(c => c.name === 'session')?.missing).toEqual(['Secure'])
 
     const report = text(s, results)
     expect(report).toContain('Google Fonts')
     // each finding carries its own light, so the reader sees which one makes the check red or yellow
     expect(report).toContain('🔴 Cookie _ga (shop.example) – eigen, Google Analytics')
-    expect(report).toContain('🟡 Cookie session (shop.example) – eigen, unbekannt, bis Sitzungsende')
+    expect(report).toContain('🟡 Cookie session (shop.example) – eigen, unbekannt, bis Sitzungsende, ohne Secure')
+    expect(report).toContain('🟡 Header x-powered-by: PHP/8.1.2')
     expect(report).toContain('🟡 localStorage: theme – unbekannt')
     expect(report).toContain('Datenschutzerklärung: kein Link auf der Seite gefunden')
     expect(report).toContain('http://shop.example/newsletter – sendet unverschlüsselt über http')

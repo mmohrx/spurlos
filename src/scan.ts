@@ -53,7 +53,7 @@ export function browserAgent(chromeVersion: string, platform = process.platform)
 }
 
 export type Request = { url: string; host: string; type: string }
-export type Cookie = { name: string; domain: string; expires: number }
+export type Cookie = { name: string; domain: string; expires: number; secure: boolean; httpOnly: boolean }
 export type StorageEntry = { area: 'localStorage' | 'sessionStorage'; key: string }
 export type Link = { text: string; href: string }
 export type Form = { action: string; method: string }
@@ -82,6 +82,8 @@ export type Scan = {
   metaCsp?: string
   /** a referrer policy set in <meta name="referrer"> */
   metaReferrer?: string
+  /** what <meta name="generator"> says, often the CMS and its version */
+  generator?: string
   /** the user agent the page was opened with */
   userAgent: string
 }
@@ -134,8 +136,14 @@ export async function scan(url: string, options: ScanOptions = {}): Promise<Scan
       .waitForLoadState('networkidle', { timeout: options.settleMs ?? 10_000 })
       .then(() => true, () => false)
 
-    const cookies = (await context.cookies()).map(c => ({ name: c.name, domain: c.domain.replace(/^\./, ''), expires: c.expires }))
-    const { storage, links, forms, metaCsp, metaReferrer } = await page.evaluate(() => {
+    const cookies = (await context.cookies()).map(c => ({
+      name: c.name,
+      domain: c.domain.replace(/^\./, ''),
+      expires: c.expires,
+      secure: c.secure,
+      httpOnly: c.httpOnly,
+    }))
+    const { storage, links, forms, metaCsp, metaReferrer, generator } = await page.evaluate(() => {
       const storage: { area: 'localStorage' | 'sessionStorage'; key: string }[] = []
       for (const area of ['localStorage', 'sessionStorage'] as const) {
         const s = window[area]
@@ -148,7 +156,8 @@ export async function scan(url: string, options: ScanOptions = {}): Promise<Scan
       const forms = [...document.forms].map(f => ({ action: f.action, method: (f.getAttribute('method') ?? 'get').toLowerCase() }))
       const meta = [...document.querySelectorAll('meta[http-equiv]')].find(m => m.getAttribute('http-equiv')?.toLowerCase() === 'content-security-policy')
       const referrer = document.querySelector('meta[name="referrer" i]')?.getAttribute('content') ?? null
-      return { storage, links, forms, metaCsp: meta?.getAttribute('content') ?? null, metaReferrer: referrer }
+      const generator = document.querySelector('meta[name="generator" i]')?.getAttribute('content') ?? null
+      return { storage, links, forms, metaCsp: meta?.getAttribute('content') ?? null, metaReferrer: referrer, generator }
     })
 
     const headers = await response.allHeaders()
@@ -173,6 +182,7 @@ export async function scan(url: string, options: ScanOptions = {}): Promise<Scan
     if (finalUrl.startsWith('https:')) result.http = await probeHttp(finalUrl.replace(/^https:/, 'http:'), options.fetch ?? fetch, options.userAgent ?? BOT_AGENT)
     if (metaCsp) result.metaCsp = metaCsp
     if (metaReferrer) result.metaReferrer = metaReferrer
+    if (generator) result.generator = generator
     // one page can be both Impressum and Datenschutz; open it once
     for (const href of new Set(legalLinks(links).map(l => l.href))) result.legal.push(await visitor(href))
     return result

@@ -258,6 +258,12 @@ const BADGE = { red: ['bgRed', 'white', 'bold'], yellow: ['bgYellow', 'black', '
 
 export type TextOptions = { now?: number; color?: boolean; verbose?: boolean; width?: number }
 
+/**
+ * Link texts, header values, cookie names and addresses come from the page. Control characters in them could
+ * move the cursor, recolor or rewrite the terminal, bidi overrides could reorder what the reader sees; both become a visible �.
+ */
+export const clean = (s: string) => s.replace(/[\u0000-\u001f\u007f-\u009f\u200e\u200f\u202a-\u202e\u2066-\u2069]/g, '\ufffd')
+
 /** words to lines of at most max characters; a longer word keeps a line of its own */
 function wrap(s: string, max: number): string[] {
   const lines: string[] = []
@@ -297,7 +303,8 @@ export function text(scan: Scan, results: Result[], lang: Lang = 'de', options: 
     if (r.level === 'green' && !verbose) return [head]
 
     const items = s.items ?? []
-    const tree = items.map(([l, text], i) => {
+    const tree = items.map(([l, raw], i) => {
+      const text = clean(raw)
       // what follows the dash says what the finding is; dimmed, the thing itself stands out
       const dash = text.indexOf(' – ')
       const shown = dash > 0 ? text.slice(0, dash) + style('dim', text.slice(dash)) : text
@@ -318,8 +325,8 @@ export function text(scan: Scan, results: Result[], lang: Lang = 'de', options: 
   const hidden = !verbose && results.some(r => r.level === 'green' && section(t, r, now).items?.length)
 
   return [
-    `${style('bold', 'spurlos')} ${style('dim', VERSION)}  ${style('cyan', scan.finalUrl)}`,
-    ...(scan.finalUrl !== scan.url ? [style('dim', t.openedAs(scan.url))] : []),
+    `${style('bold', 'spurlos')} ${style('dim', VERSION)}  ${style('cyan', clean(scan.finalUrl))}`,
+    ...(scan.finalUrl !== scan.url ? [style('dim', t.openedAs(clean(scan.url)))] : []),
     summary,
     '',
     ...body,

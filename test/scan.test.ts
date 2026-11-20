@@ -101,5 +101,11 @@ describe('scan', { timeout: 30_000 }, () => {
     expect(report).toContain('Cookie _ga (shop.example) – eigen, Google Analytics')
     expect(report).toContain('Datenschutzerklärung: kein Link auf der Seite gefunden')
     expect(report).toContain('http://shop.example/newsletter – sendet unverschlüsselt über http')
+
+    const english = text(s, results, 'en')
+    expect(english).toContain('Privacy policy: no link found on the page')
+    expect(english).toContain('Cookie _ga (shop.example) – first-party, Google Analytics')
+    expect(english).toContain('http:// serves the page without redirecting to https://.')
+    expect(english).not.toMatch(/[äöüß„]/)
   })
 })

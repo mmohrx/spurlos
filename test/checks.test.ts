@@ -31,7 +31,7 @@ describe('thirdParty', () => {
 describe('services', () => {
   test('the most specific host wins', () => {
     expect(serviceOfHost('maps.googleapis.com')?.name).toBe('Google Maps')
-    expect(serviceOfHost('www.googleapis.com')?.name).toBe('Google (allgemein)')
+    expect(serviceOfHost('www.googleapis.com')?.name).toBe('Google')
     expect(serviceOfHost('region1.google-analytics.com')?.name).toBe('Google Analytics')
     expect(serviceOfHost('notgoogle.com')).toBeUndefined()
   })

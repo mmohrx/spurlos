@@ -14,7 +14,7 @@
   { "name": "Vimeo", "category": "video", "hosts": ["vimeo.com", "vimeocdn.com"] },
   { "name": "Google Maps", "category": "maps", "hosts": ["maps.googleapis.com", "maps.gstatic.com", "maps.google.com"] },
   { "name": "Google reCAPTCHA", "category": "captcha", "hosts": ["recaptcha.net"] },
-  { "name": "Google (allgemein)", "category": "other", "hosts": ["google.com", "gstatic.com", "googleapis.com"] },
+  { "name": "Google", "category": "other", "hosts": ["google.com", "gstatic.com", "googleapis.com"] },
   { "name": "jsDelivr", "category": "cdn", "hosts": ["cdn.jsdelivr.net"] },
   { "name": "cdnjs (Cloudflare)", "category": "cdn", "hosts": ["cdnjs.cloudflare.com"] },
   { "name": "unpkg", "category": "cdn", "hosts": ["unpkg.com"] },

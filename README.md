@@ -19,8 +19,8 @@ spurlos – https://beispiel-firma.de/
    fonts.gstatic.com – Google Fonts (2 Anfragen)
 
 🟡 Cookies und Speicher vor jedem Klick: 1 Cookie, 0 Einträge im Browser-Speicher.
-   Cookie PHPSESSID (beispiel-firma.de) – eigen, bis Sitzungsende
-   Nur eigene Einträge ohne bekannten Tracker. Prüfe, ob sie technisch nötig sind.
+   Cookie warenkorb (beispiel-firma.de) – eigen, 30 Tage
+   Keine bekannten Tracker. Prüfe bei den Einträgen ohne Namen, ob sie technisch nötig sind.
 
 🟢 Impressum und Datenschutz: beide verlinkt und erreichbar.
    Impressum: „Impressum“ → https://beispiel-firma.de/impressum – erreichbar
@@ -69,13 +69,15 @@ npx spurlos <url>
 | Prüfung | 🟢 | 🟡 | 🔴 |
 |---|---|---|---|
 | Fremde Server | keine | – | mindestens eine Anfrage an eine andere Domain |
-| Cookies und Speicher | nichts gesetzt | nur eigene Cookies oder Einträge ohne bekannten Tracker | Cookie einer fremden Domain oder eines bekannten Trackers |
+| Cookies und Speicher | nichts gesetzt, oder nur bekannte Sitzungs- und Sicherheits-Cookies | eigene Cookies oder Einträge, die spurlos nicht kennt | Cookie einer fremden Domain oder eines bekannten Trackers |
 | Impressum und Datenschutz | beide verlinkt und erreichbar | – | ein Link fehlt oder die Seite antwortet mit einem Fehler |
 | HTTPS | https, http leitet weiter, HSTS, Zertifikat noch 14 Tage oder länger gültig | kein HSTS, Zertifikat weniger als 14 Tage gültig | kein https, http ohne Weiterleitung, Zertifikat weniger als 7 Tage gültig oder abgelaufen |
 | Sicherheits-Header | alle gesetzt | einer oder mehrere fehlen | – |
 | Formulare | keine oder alle senden verschlüsselt an die eigene Seite | eines sendet an einen fremden Server | eines sendet unverschlüsselt über http |
 
 Geprüft werden bei den Headern `Content-Security-Policy`, `X-Frame-Options` (oder `frame-ancestors` in der CSP), `X-Content-Type-Options: nosniff`, `Referrer-Policy` und `Permissions-Policy`. Impressum und Datenschutzerklärung erkennt spurlos am Linktext oder an der Adresse, auf Deutsch und Englisch.
+
+Bekannte Sitzungs- und Sicherheits-Cookies sind zum Beispiel `XSRF-TOKEN` und `<app>-session` von Laravel, `PHPSESSID`, `JSESSIONID`, `csrftoken` von Django und `__cf_bm` von Cloudflare. Die Liste steht in `src/services.json` (Kategorie `necessary`).
 
 Subdomains zählen zur eigenen Seite (`cdn.firma.de` gehört zu `www.firma.de`), dabei gilt die Public Suffix List (`firma.co.uk`).
 
@@ -105,7 +107,7 @@ Exit-Code `0` ohne roten Befund, `1` mit rotem Befund, `2`, wenn die Seite sich 
 
 ## Bekannte Dienste ergänzen
 
-Welche Hosts und Cookies zu welchem Dienst gehören, steht in [`src/services.json`](src/services.json). Hosts gelten samt Subdomains, Cookie-Namen als Anfang (`_ga` deckt auch `_ga_ABC123` ab). Fehlt ein Dienst, freue ich mich über einen Pull Request.
+Welche Hosts und Cookies zu welchem Dienst gehören, steht in [`src/services.json`](src/services.json). Hosts gelten samt Subdomains, Cookie-Namen als Anfang (`_ga` deckt auch `_ga_ABC123` ab), mit `*` vorn als Ende (`*-session`). Fehlt ein Dienst, freue ich mich über einen Pull Request.
 
 ## Was spurlos nicht tut
 

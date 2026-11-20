@@ -39,7 +39,10 @@ describe('services', () => {
   test('cookie names are prefixes', () => {
     expect(serviceOfCookie('_ga_ABC123')?.name).toBe('Google Analytics')
     expect(serviceOfCookie('_hjSessionUser_1')?.name).toBe('Hotjar')
-    expect(serviceOfCookie('PHPSESSID')).toBeUndefined()
+    expect(serviceOfCookie('warenkorb')).toBeUndefined()
+    expect(serviceOfCookie('packeroo-session')?.name).toBe('Session')
+    expect(serviceOfCookie('laravel_session')?.name).toBe('Session')
+    expect(serviceOfCookie('XSRF-TOKEN')?.name).toBe('CSRF-Token')
   })
 })
 
@@ -51,8 +54,18 @@ describe('cookies', () => {
   })
 
   test('own cookies and storage without a known tracker are yellow', () => {
-    expect(cookies({ ...base, cookies: [cookie('PHPSESSID')] }).level).toBe('yellow')
+    expect(cookies({ ...base, cookies: [cookie('warenkorb')] }).level).toBe('yellow')
     expect(cookies({ ...base, storage: [{ area: 'localStorage', key: 'theme' }] }).level).toBe('yellow')
+  })
+
+  test("known session and security cookies are green, like Laravel's", () => {
+    expect(cookies({ ...base, cookies: [cookie('XSRF-TOKEN'), cookie('packeroo-session')] }).level).toBe('green')
+    expect(cookies({ ...base, cookies: [cookie('PHPSESSID'), cookie('__cf_bm')] }).level).toBe('green')
+  })
+
+  test('next to anything unknown they stay yellow, and from another domain red', () => {
+    expect(cookies({ ...base, cookies: [cookie('XSRF-TOKEN')], storage: [{ area: 'localStorage', key: 'theme' }] }).level).toBe('yellow')
+    expect(cookies({ ...base, cookies: [cookie('PHPSESSID', 'tracker.net')] }).level).toBe('red')
   })
 
   test('known tracking cookies are red, even when set on the own domain', () => {

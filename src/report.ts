@@ -23,7 +23,8 @@ const de = {
   session: 'bis Sitzungsende',
   underADay: 'unter 1 Tag',
   days: (n: number) => plural(n, 'Tag', 'Tage'),
-  cookiesReview: 'Nur eigene Einträge ohne bekannten Tracker. Prüfe, ob sie technisch nötig sind.',
+  cookiesReview: 'Keine bekannten Tracker. Prüfe bei den Einträgen ohne Namen, ob sie technisch nötig sind.',
+  cookiesNecessary: 'Nur bekannte Sitzungs- und Sicherheits-Cookies, wie sie Frameworks und Proxys für den Betrieb setzen.',
 
   legal: (green: boolean) => `Impressum und Datenschutz: ${green ? 'beide verlinkt und erreichbar.' : 'nicht vollständig.'}`,
   legalName: { impressum: 'Impressum', datenschutz: 'Datenschutzerklärung' } satisfies Record<LegalKind, string>,
@@ -75,7 +76,8 @@ const en: typeof de = {
   session: 'until the session ends',
   underADay: 'under 1 day',
   days: n => plural(n, 'day', 'days'),
-  cookiesReview: 'Only first-party entries without a known tracker. Check whether they are technically necessary.',
+  cookiesReview: 'No known trackers. For the entries without a name, check whether they are technically necessary.',
+  cookiesNecessary: 'Only known session and security cookies, as frameworks and proxies set them to run a site.',
 
   legal: green => `Legal notice and privacy policy: ${green ? 'both linked and reachable.' : 'incomplete.'}`,
   legalName: { impressum: 'Legal notice (Impressum)', datenschutz: 'Privacy policy' },
@@ -137,7 +139,7 @@ function section(t: typeof de, r: Result, now: number): string[] {
             return `Cookie ${c.name} (${c.domain}) – ${notes.join(', ')}`
           }),
           ...r.storage.map(s => `${s.area}: ${s.key}`),
-          ...(r.level === 'yellow' ? [t.cookiesReview] : []),
+          ...(r.level === 'yellow' ? [t.cookiesReview] : r.level === 'green' ? [t.cookiesNecessary] : []),
         ]),
       ]
 

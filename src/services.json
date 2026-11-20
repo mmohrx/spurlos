@@ -19,5 +19,8 @@
   { "name": "cdnjs (Cloudflare)", "category": "cdn", "hosts": ["cdnjs.cloudflare.com"] },
   { "name": "unpkg", "category": "cdn", "hosts": ["unpkg.com"] },
   { "name": "jQuery CDN", "category": "cdn", "hosts": ["code.jquery.com"] },
-  { "name": "Font Awesome", "category": "cdn", "hosts": ["kit.fontawesome.com", "use.fontawesome.com", "ka-f.fontawesome.com"] }
+  { "name": "Font Awesome", "category": "cdn", "hosts": ["kit.fontawesome.com", "use.fontawesome.com", "ka-f.fontawesome.com"] },
+  { "name": "Session", "category": "necessary", "hosts": [], "cookies": ["PHPSESSID", "JSESSIONID", "ASP.NET_SessionId", ".AspNetCore.Session", "sessionid", "*_session", "*-session"] },
+  { "name": "CSRF-Token", "category": "necessary", "hosts": [], "cookies": ["XSRF-TOKEN", "csrftoken", "_csrf", ".AspNetCore.Antiforgery."] },
+  { "name": "Cloudflare", "category": "necessary", "hosts": [], "cookies": ["__cf_bm", "__cflb", "cf_clearance", "_cfuvid"] }
 ]

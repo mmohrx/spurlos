@@ -38,9 +38,13 @@ export function serviceOfHost(host: string): Service | undefined {
   return byHost.find(({ h }) => host === h || host.endsWith('.' + h))?.s
 }
 
+/** Session and security cookies of common frameworks and proxies: needed to run the site, not to follow anyone. */
+export const isNecessary = (s: Service | undefined) => s?.category === 'necessary'
+
 export function serviceOfCookie(name: string): Service | undefined {
-  // cookie names in services.json are prefixes: _ga also covers GA4's _ga_ABC123
-  return services.find(s => s.cookies?.some(c => name.startsWith(c)))
+  // cookie names in services.json are prefixes (_ga also covers GA4's _ga_ABC123),
+  // or with a leading * suffixes (*-session covers Laravel's <app>-session)
+  return services.find(s => s.cookies?.some(c => (c.startsWith('*') ? name.endsWith(c.slice(1)) : name.startsWith(c))))
 }
 
 /** Every request to another site than the page's own counts: it hands the visitor's IP to someone else. */
@@ -55,17 +59,17 @@ export function thirdParty(scan: Scan): Result {
 }
 
 /**
- * Cookies and storage present before any click. A third-party or known tracking cookie is red;
- * other own cookies and storage are yellow, as they may be technically necessary and need a look.
+ * Cookies and storage present before any click. A third-party cookie or a known tracker's is red; known session and
+ * security cookies (Laravel's XSRF-TOKEN, PHPSESSID, Cloudflare's __cf_bm …) are green; any other own cookie or
+ * storage entry is yellow, as it may be needed to run the site and wants a look.
  */
 export function cookies(scan: Scan): Result {
   const own = site(new URL(scan.finalUrl).hostname)
   const found = scan.cookies.map(c => ({ ...c, thirdParty: site(c.domain) !== own, service: serviceOfCookie(c.name) }))
-  const level: Level = found.some(c => c.thirdParty || c.service)
-    ? 'red'
-    : found.length || scan.storage.length
-      ? 'yellow'
-      : 'green'
+  const level = worst([
+    ...found.map((c): Level => (c.thirdParty || (c.service && !isNecessary(c.service)) ? 'red' : isNecessary(c.service) ? 'green' : 'yellow')),
+    ...scan.storage.map((): Level => 'yellow'),
+  ])
   return { check: 'cookies', level, cookies: found, storage: scan.storage }
 }
 

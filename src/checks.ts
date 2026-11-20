@@ -4,11 +4,12 @@ import type { Cookie, Form, Link, Scan, Visit } from './scan.ts'
 
 export type Level = 'green' | 'yellow' | 'red'
 /** httpOnly: its cookies hold a session and should be out of reach of JavaScript */
-export type Service = { name: string; category: string; hosts: string[]; cookies?: string[]; httpOnly?: boolean }
+export type Service = { name: string; category: string; hosts: string[]; cookies?: string[]; storage?: string[]; httpOnly?: boolean }
 
 export type ThirdParty = { host: string; service: Service | undefined; requests: number }
 /** missing: attributes the cookie should have – Secure on an https page, HttpOnly for a session cookie */
 export type CookieFinding = Cookie & { thirdParty: boolean; service: Service | undefined; missing: ('Secure' | 'HttpOnly')[] }
+export type StorageFinding = Scan['storage'][number] & { service: Service | undefined }
 /** a header or meta tag that names the software behind the page; version: it names its version too */
 export type Disclosure = { source: 'header' | 'meta'; name: string; value: string; version: boolean }
 export type LegalKind = 'impressum' | 'datenschutz'
@@ -19,7 +20,7 @@ export type FormFinding = Form & { problem?: 'unencrypted' | 'third-party' }
 
 export type Result =
   | { check: 'third-party'; level: Level; hosts: ThirdParty[] }
-  | { check: 'cookies'; level: Level; cookies: CookieFinding[]; storage: Scan['storage'] }
+  | { check: 'cookies'; level: Level; cookies: CookieFinding[]; storage: StorageFinding[] }
   | { check: 'legal'; level: Level; pages: LegalPage[] }
   | { check: 'https'; level: Level; https: boolean; certDaysLeft?: number; http?: HttpRedirect; hsts: boolean }
   | { check: 'headers'; level: Level; missing: string[] }
@@ -46,10 +47,17 @@ export function serviceOfHost(host: string): Service | undefined {
 /** Session and security cookies of common frameworks and proxies: needed to run the site, not to follow anyone. */
 export const isNecessary = (s: Service | undefined) => s?.category === 'necessary'
 
+// names in services.json are prefixes (_ga also covers GA4's _ga_ABC123),
+// or with a leading * suffixes (*-session covers Laravel's <app>-session)
+const matches = (name: string) => (pattern: string) => (pattern.startsWith('*') ? name.endsWith(pattern.slice(1)) : name.startsWith(pattern))
+
 export function serviceOfCookie(name: string): Service | undefined {
-  // cookie names in services.json are prefixes (_ga also covers GA4's _ga_ABC123),
-  // or with a leading * suffixes (*-session covers Laravel's <app>-session)
-  return services.find(s => s.cookies?.some(c => (c.startsWith('*') ? name.endsWith(c.slice(1)) : name.startsWith(c))))
+  return services.find(s => s.cookies?.some(matches(name)))
+}
+
+/** for keys in localStorage and sessionStorage, such as Vue Router's saved scroll positions */
+export function serviceOfStorage(key: string): Service | undefined {
+  return services.find(s => s.storage?.some(matches(key)))
 }
 
 /** Every request to another site than the page's own counts: it hands the visitor's IP to someone else. */
@@ -75,8 +83,8 @@ export const cookieLevel = (c: CookieFinding): Level =>
   c.thirdParty || (c.service && !isNecessary(c.service)) ? 'red' : isNecessary(c.service) && !c.missing.length ? 'green' : 'yellow'
 /** a version number tells an attacker which known holes to try; the bare name of the software is only a hint */
 export const disclosureLevel = (d: Disclosure): Level => (d.version ? 'yellow' : 'green')
-/** spurlos cannot tell what an app keeps in browser storage, so each entry wants a look. */
-export const STORAGE_LEVEL: Level = 'yellow'
+/** what a framework keeps there to run is green; anything else an app stores wants a look */
+export const storageLevel = (e: StorageFinding): Level => (isNecessary(e.service) ? 'green' : 'yellow')
 export const legalLevel = (p: LegalPage): Level => (ok(p.visit) ? 'green' : 'red')
 export const certLevel = (daysLeft: number): Level => (daysLeft < 7 ? 'red' : daysLeft < 14 ? 'yellow' : 'green')
 /** nothing on http is yellow: browsers mostly try https first, but old http:// links break */
@@ -98,8 +106,9 @@ export function cookies(scan: Scan): Result {
     if (service?.httpOnly && !c.httpOnly) missing.push('HttpOnly')
     return { ...c, thirdParty: site(c.domain) !== own, service, missing }
   })
-  const level = worst([...found.map(cookieLevel), ...scan.storage.map((): Level => STORAGE_LEVEL)])
-  return { check: 'cookies', level, cookies: found, storage: scan.storage }
+  const storage = scan.storage.map(e => ({ ...e, service: serviceOfStorage(e.key) }))
+  const level = worst([...found.map(cookieLevel), ...storage.map(storageLevel)])
+  return { check: 'cookies', level, cookies: found, storage }
 }
 
 const LEGAL: Record<LegalKind, RegExp> = {

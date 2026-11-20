@@ -96,7 +96,7 @@ describe('scan', { timeout: 30_000 }, () => {
     const cookies = pick(results, 'cookies')
     expect(cookies.level).toBe('red')
     expect(cookies.cookies.map(c => c.name).sort()).toEqual(['_ga', 'session'])
-    expect(cookies.storage).toEqual([{ area: 'localStorage', key: 'theme' }])
+    expect(cookies.storage).toEqual([{ area: 'localStorage', key: 'theme', service: undefined }])
 
     const legal = pick(results, 'legal')
     expect(legal.level).toBe('red')

@@ -1,4 +1,4 @@
-import { certLevel, cookieLevel, disclosureLevel, formLevel, httpLevel, legalLevel, STORAGE_LEVEL, type FormFinding, type HttpRedirect, type LegalKind, type Level, type Result } from './checks.ts'
+import { certLevel, cookieLevel, disclosureLevel, formLevel, httpLevel, legalLevel, storageLevel, type FormFinding, type HttpRedirect, type LegalKind, type Level, type Result } from './checks.ts'
 import type { Scan } from './scan.ts'
 
 export type Lang = 'de' | 'en'
@@ -35,7 +35,7 @@ const de = {
   disclosureHeader: (name: string, value: string) => `Header ${name}: ${value}`,
   disclosureMeta: (value: string) => `<meta name="generator">: ${value}`,
   disclosureHint: 'Versionsnummern lassen sich meist abschalten, etwa mit expose_php = Off in PHP oder server_tokens off in nginx.',
-  cookiesNecessary: 'Nur bekannte Sitzungs- und Sicherheits-Cookies, wie sie Frameworks und Proxys für den Betrieb setzen.',
+  cookiesNecessary: 'Nur bekannte Einträge, wie sie Frameworks und Proxys für den Betrieb setzen.',
 
   legal: (green: boolean) => `Impressum und Datenschutz: ${green ? 'beide verlinkt und erreichbar.' : 'nicht vollständig.'}`,
   legalName: { impressum: 'Impressum', datenschutz: 'Datenschutzerklärung' } satisfies Record<LegalKind, string>,
@@ -99,7 +99,7 @@ const en: typeof de = {
   disclosureHeader: (name, value) => `Header ${name}: ${value}`,
   disclosureMeta: value => `<meta name="generator">: ${value}`,
   disclosureHint: 'Version numbers can usually be switched off, e.g. with expose_php = Off in PHP or server_tokens off in nginx.',
-  cookiesNecessary: 'Only known session and security cookies, as frameworks and proxies set them to run a site.',
+  cookiesNecessary: 'Only known entries, as frameworks and proxies set them to run a site.',
 
   legal: green => `Legal notice and privacy policy: ${green ? 'both linked and reachable.' : 'incomplete.'}`,
   legalName: { impressum: 'Legal notice (Impressum)', datenschutz: 'Privacy policy' },
@@ -168,9 +168,9 @@ function section(t: typeof de, r: Result, now: number): string[] {
           ]
           return [cookieLevel(c), `Cookie ${c.name} (${c.domain}) – ${notes.join(', ')}`]
         }),
-        ...r.storage.map((s): Item => [STORAGE_LEVEL, `${s.area}: ${s.key} – ${t.unknown}`]),
+        ...r.storage.map((s): Item => [storageLevel(s), `${s.area}: ${s.key} – ${s.service?.name ?? t.unknown}`]),
       ]
-      const unknown = r.storage.length > 0 || r.cookies.some(c => !c.service && !c.thirdParty)
+      const unknown = r.storage.some(s => !s.service) || r.cookies.some(c => !c.service && !c.thirdParty)
       const note = unknown && r.level !== 'red' ? t.cookiesReview : r.level === 'green' ? t.cookiesNecessary : null
       const notes = [...(note ? [note] : []), ...(r.cookies.some(c => c.missing.length) ? [t.cookieMissingNote] : [])]
       return [head(t.cookies(r.cookies.length, r.storage.length)), ...items(list, notes)]

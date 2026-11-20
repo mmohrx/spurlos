@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { cookies, disclosure, forms, headers, https, legal, legalLinks, serviceOfCookie, serviceOfHost, thirdParty } from '../src/checks.ts'
+import { cookies, disclosure, forms, headers, https, legal, legalLinks, serviceOfCookie, serviceOfStorage, serviceOfHost, thirdParty } from '../src/checks.ts'
 import type { Scan } from '../src/scan.ts'
 
 const base: Scan = { url: 'https://www.firma.de/', finalUrl: 'https://www.firma.de/', settled: true, requests: [], cookies: [], storage: [], headers: {}, links: [], legal: [], forms: [], userAgent: 'test' }
@@ -61,6 +61,13 @@ describe('cookies', () => {
   test("known session and security cookies are green, like Laravel's", () => {
     expect(cookies({ ...base, cookies: [cookie('XSRF-TOKEN'), cookie('packeroo-session')] }).level).toBe('green')
     expect(cookies({ ...base, cookies: [cookie('PHPSESSID'), cookie('__cf_bm')] }).level).toBe('green')
+  })
+
+  test("a framework's own storage entries are green, an app's own ones yellow", () => {
+    expect(serviceOfStorage('vue-router:scroll')?.name).toMatch(/^Vue Router/)
+    const vue = { ...base, storage: [{ area: 'sessionStorage' as const, key: 'vue-router:scroll' }] }
+    expect(cookies(vue).level).toBe('green')
+    expect(cookies({ ...vue, storage: [...vue.storage, { area: 'localStorage' as const, key: 'packeroo-theme' }] }).level).toBe('yellow')
   })
 
   test('next to anything unknown they stay yellow, and from another domain red', () => {

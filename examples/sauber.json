@@ -1,0 +1,137 @@
+{
+  "scan": {
+    "url": "https://shop.example/",
+    "finalUrl": "https://shop.example/",
+    "settled": true,
+    "requests": [
+      {
+        "url": "https://shop.example/",
+        "host": "shop.example",
+        "type": "document"
+      },
+      {
+        "url": "https://shop.example/style.css",
+        "host": "shop.example",
+        "type": "stylesheet"
+      }
+    ],
+    "cookies": [],
+    "storage": [],
+    "headers": {
+      "content-length": "547",
+      "content-security-policy": "default-src 'self'; frame-ancestors 'none'",
+      "content-type": "text/html",
+      "permissions-policy": "camera=(), microphone=()",
+      "referrer-policy": "strict-origin-when-cross-origin",
+      "strict-transport-security": "max-age=31536000",
+      "x-content-type-options": "nosniff"
+    },
+    "links": [
+      {
+        "text": "Impressum",
+        "href": "https://shop.example/impressum"
+      },
+      {
+        "text": "Datenschutz",
+        "href": "https://shop.example/datenschutz"
+      }
+    ],
+    "legal": [
+      {
+        "url": "https://shop.example/impressum",
+        "status": 200,
+        "finalUrl": "https://shop.example/impressum"
+      },
+      {
+        "url": "https://shop.example/datenschutz",
+        "status": 200,
+        "finalUrl": "https://shop.example/datenschutz"
+      }
+    ],
+    "forms": [
+      {
+        "action": "https://shop.example/kontakt",
+        "method": "post"
+      }
+    ],
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/159.0.0.0 Safari/537.36 spurlos/0.1.0",
+    "http": {
+      "url": "http://shop.example/",
+      "status": 200,
+      "finalUrl": "https://shop.example/"
+    },
+    "metaCsp": "default-src 'self'",
+    "metaReferrer": "no-referrer"
+  },
+  "results": [
+    {
+      "check": "third-party",
+      "level": "green",
+      "hosts": []
+    },
+    {
+      "check": "cookies",
+      "level": "green",
+      "cookies": [],
+      "storage": []
+    },
+    {
+      "check": "legal",
+      "level": "green",
+      "pages": [
+        {
+          "kind": "impressum",
+          "link": {
+            "text": "Impressum",
+            "href": "https://shop.example/impressum"
+          },
+          "visit": {
+            "url": "https://shop.example/impressum",
+            "status": 200,
+            "finalUrl": "https://shop.example/impressum"
+          }
+        },
+        {
+          "kind": "datenschutz",
+          "link": {
+            "text": "Datenschutz",
+            "href": "https://shop.example/datenschutz"
+          },
+          "visit": {
+            "url": "https://shop.example/datenschutz",
+            "status": 200,
+            "finalUrl": "https://shop.example/datenschutz"
+          }
+        }
+      ]
+    },
+    {
+      "check": "https",
+      "level": "green",
+      "https": true,
+      "hsts": true,
+      "http": "redirects"
+    },
+    {
+      "check": "headers",
+      "level": "green",
+      "missing": []
+    },
+    {
+      "check": "forms",
+      "level": "green",
+      "forms": [
+        {
+          "action": "https://shop.example/kontakt",
+          "method": "post"
+        }
+      ]
+    },
+    {
+      "check": "disclosure",
+      "level": "green",
+      "findings": []
+    }
+  ],
+  "note": "Technische Vorprüfung – keine Rechtsberatung und keine Aussage darüber, ob die Seite DSGVO-konform ist."
+}

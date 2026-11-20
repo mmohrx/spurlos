@@ -1,0 +1,273 @@
+{
+  "scan": {
+    "url": "https://shop.example/tracked.html",
+    "finalUrl": "https://shop.example/tracked.html",
+    "settled": true,
+    "requests": [
+      {
+        "url": "https://shop.example/tracked.html",
+        "host": "shop.example",
+        "type": "document"
+      },
+      {
+        "url": "https://fonts.googleapis.com/css2?family=Inter",
+        "host": "fonts.googleapis.com",
+        "type": "stylesheet"
+      },
+      {
+        "url": "https://www.googletagmanager.com/gtag/js?id=G-TEST",
+        "host": "www.googletagmanager.com",
+        "type": "script"
+      },
+      {
+        "url": "https://shop.example/tracker.js",
+        "host": "shop.example",
+        "type": "script"
+      },
+      {
+        "url": "https://cdn.unbekannt.example/bild.png",
+        "host": "cdn.unbekannt.example",
+        "type": "image"
+      },
+      {
+        "url": "https://www.youtube.com/embed/abc",
+        "host": "www.youtube.com",
+        "type": "document"
+      }
+    ],
+    "cookies": [
+      {
+        "name": "session",
+        "domain": "shop.example",
+        "expires": -1,
+        "secure": false,
+        "httpOnly": true
+      },
+      {
+        "name": "_ga",
+        "domain": "shop.example",
+        "expires": 1829758822.210979,
+        "secure": false,
+        "httpOnly": false
+      }
+    ],
+    "storage": [
+      {
+        "area": "localStorage",
+        "key": "theme"
+      }
+    ],
+    "headers": {
+      "content-length": "750",
+      "content-type": "text/html",
+      "server": "Apache/2.4.41 (Ubuntu)",
+      "x-powered-by": "PHP/8.1.2"
+    },
+    "links": [
+      {
+        "text": "Impressum",
+        "href": "https://shop.example/rechtliches"
+      }
+    ],
+    "legal": [
+      {
+        "url": "https://shop.example/rechtliches",
+        "status": 404,
+        "finalUrl": "https://shop.example/rechtliches"
+      }
+    ],
+    "forms": [
+      {
+        "action": "http://shop.example/newsletter",
+        "method": "post"
+      },
+      {
+        "action": "https://formspree.io/f/abc",
+        "method": "post"
+      }
+    ],
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/159.0.0.0 Safari/537.36 spurlos/0.1.0",
+    "http": {
+      "url": "http://shop.example/tracked.html",
+      "status": 200,
+      "finalUrl": "http://shop.example/tracked.html"
+    },
+    "generator": "WordPress 6.2"
+  },
+  "results": [
+    {
+      "check": "third-party",
+      "level": "red",
+      "hosts": [
+        {
+          "host": "cdn.unbekannt.example",
+          "requests": 1
+        },
+        {
+          "host": "fonts.googleapis.com",
+          "service": {
+            "name": "Google Fonts",
+            "category": "fonts",
+            "hosts": [
+              "fonts.googleapis.com",
+              "fonts.gstatic.com"
+            ]
+          },
+          "requests": 1
+        },
+        {
+          "host": "www.googletagmanager.com",
+          "service": {
+            "name": "Google Tag Manager",
+            "category": "tracking",
+            "hosts": [
+              "googletagmanager.com"
+            ]
+          },
+          "requests": 1
+        },
+        {
+          "host": "www.youtube.com",
+          "service": {
+            "name": "YouTube",
+            "category": "video",
+            "hosts": [
+              "youtube.com",
+              "youtube-nocookie.com",
+              "ytimg.com",
+              "googlevideo.com"
+            ]
+          },
+          "requests": 1
+        }
+      ]
+    },
+    {
+      "check": "cookies",
+      "level": "red",
+      "cookies": [
+        {
+          "name": "session",
+          "domain": "shop.example",
+          "expires": -1,
+          "secure": false,
+          "httpOnly": true,
+          "thirdParty": false,
+          "missing": [
+            "Secure"
+          ]
+        },
+        {
+          "name": "_ga",
+          "domain": "shop.example",
+          "expires": 1829758822.210979,
+          "secure": false,
+          "httpOnly": false,
+          "thirdParty": false,
+          "service": {
+            "name": "Google Analytics",
+            "category": "tracking",
+            "hosts": [
+              "google-analytics.com",
+              "analytics.google.com"
+            ],
+            "cookies": [
+              "_ga",
+              "_gid",
+              "_gat"
+            ]
+          },
+          "missing": [
+            "Secure"
+          ]
+        }
+      ],
+      "storage": [
+        {
+          "area": "localStorage",
+          "key": "theme"
+        }
+      ]
+    },
+    {
+      "check": "legal",
+      "level": "red",
+      "pages": [
+        {
+          "kind": "impressum",
+          "link": {
+            "text": "Impressum",
+            "href": "https://shop.example/rechtliches"
+          },
+          "visit": {
+            "url": "https://shop.example/rechtliches",
+            "status": 404,
+            "finalUrl": "https://shop.example/rechtliches"
+          }
+        },
+        {
+          "kind": "datenschutz"
+        }
+      ]
+    },
+    {
+      "check": "https",
+      "level": "red",
+      "https": true,
+      "hsts": false,
+      "http": "no-redirect"
+    },
+    {
+      "check": "headers",
+      "level": "yellow",
+      "missing": [
+        "Content-Security-Policy",
+        "X-Frame-Options",
+        "X-Content-Type-Options",
+        "Referrer-Policy",
+        "Permissions-Policy"
+      ]
+    },
+    {
+      "check": "forms",
+      "level": "red",
+      "forms": [
+        {
+          "action": "http://shop.example/newsletter",
+          "method": "post",
+          "problem": "unencrypted"
+        },
+        {
+          "action": "https://formspree.io/f/abc",
+          "method": "post",
+          "problem": "third-party"
+        }
+      ]
+    },
+    {
+      "check": "disclosure",
+      "level": "yellow",
+      "findings": [
+        {
+          "source": "header",
+          "name": "server",
+          "value": "Apache/2.4.41 (Ubuntu)",
+          "version": true
+        },
+        {
+          "source": "header",
+          "name": "x-powered-by",
+          "value": "PHP/8.1.2",
+          "version": true
+        },
+        {
+          "source": "meta",
+          "name": "generator",
+          "value": "WordPress 6.2",
+          "version": true
+        }
+      ]
+    }
+  ],
+  "note": "Technische Vorprüfung – keine Rechtsberatung und keine Aussage darüber, ob die Seite DSGVO-konform ist."
+}

@@ -1,0 +1,25 @@
+spurlos 0.1.0  https://shop.example/
+7 fine
+
+🟢 Third-party servers              none
+  → Opening the page sent no request to another server.
+
+🟢 Cookies and storage              nothing set
+
+🟢 Legal notice and privacy policy  both linked and reachable
+  ├─ 🟢 Legal notice (Impressum): “Impressum” → https://shop.example/impressum – reachable
+  └─ 🟢 Privacy policy: “Datenschutz” → https://shop.example/datenschutz – reachable
+
+🟢 HTTPS                            fine
+  └─ 🟢 http:// redirects to https://.
+
+🟢 Security headers                 all set
+
+🟢 Forms                            1
+  └─ 🟢 POST https://shop.example/kontakt – sends encrypted to the site itself
+
+🟢 Software details                 none
+  → Neither headers nor the page name the software behind it.
+
+Technical pre-check – not legal advice, and no statement on whether the site
+complies with the GDPR.

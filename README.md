@@ -46,6 +46,12 @@ Details auch zu den grünen Prüfungen: --verbose
 Technische Vorprüfung – keine Rechtsberatung und keine Aussage darüber, ob die Seite DSGVO-konform ist.
 ```
 
+Im Terminal sieht das so aus, links eine Seite mit Mängeln, rechts eine saubere:
+
+![Farbige Ausgabe von spurlos für eine Seite mit Mängeln und eine saubere Seite](examples/vorschau.png)
+
+Die vollständigen Berichte beider Seiten, als Text auf Deutsch und Englisch und als JSON, liegen in [`examples/`](examples/). Beide Seiten stammen aus den Tests und laufen offline unter `https://shop.example`; `npm run examples` erzeugt alles neu.
+
 spurlos nutzt einen echten Browser (Chromium über Playwright). Es findet also auch Anfragen und Cookies, die erst per JavaScript entstehen. Impressum, Datenschutzerklärung und die http-Adresse ruft es getrennt davon auf; diese Aufrufe zählen nicht zu den Anfragen und Cookies der Seite. Ob http auf https weiterleitet, fragt es direkt beim Server und nicht über den Browser nach, denn Chromium wechselt von sich aus auf https.
 
 ## Installation

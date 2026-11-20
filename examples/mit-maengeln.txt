@@ -1,0 +1,48 @@
+spurlos 0.1.0  https://shop.example/tracked.html
+5 Mängel · 2 Hinweise
+
+🔴 Fremde Server              4
+  ├─ 🔴 cdn.unbekannt.example (1 Anfrage)
+  ├─ 🔴 fonts.googleapis.com – Google Fonts (1 Anfrage)
+  ├─ 🔴 www.googletagmanager.com – Google Tag Manager (1 Anfrage)
+  └─ 🔴 www.youtube.com – YouTube (1 Anfrage)
+     → Jeder davon erfährt beim Aufruf die IP-Adresse des Besuchers, noch bevor
+       er etwas anklickt.
+
+🔴 Cookies und Speicher       2 Cookies, 1 Eintrag im Browser-Speicher
+  ├─ 🟡 Cookie session (shop.example) – eigen, unbekannt, bis Sitzungsende, ohne Secure
+  ├─ 🔴 Cookie _ga (shop.example) – eigen, Google Analytics, 400 Tage, ohne Secure
+  └─ 🟡 localStorage: theme – unbekannt
+     → Gesetzt beim ersten Aufruf, bevor jemand etwas anklickt.
+     → Secure: Das Cookie geht auch über unverschlüsseltes http. HttpOnly:
+       Skripte auf der Seite können die Sitzung auslesen.
+
+🔴 Impressum und Datenschutz  nicht vollständig
+  ├─ 🔴 Impressum: „Impressum“ → https://shop.example/rechtliches – antwortet mit Status 404
+  └─ 🔴 Datenschutzerklärung: kein Link auf der Seite gefunden
+
+🔴 HTTPS                      mit Mängeln
+  ├─ 🔴 http:// liefert die Seite ohne Weiterleitung auf https:// aus.
+  └─ 🟡 Kein HSTS-Header (Strict-Transport-Security): Browser merken sich nicht, dass sie nur https nutzen sollen.
+
+🔴 Formulare                  2
+  ├─ 🔴 POST http://shop.example/newsletter – sendet unverschlüsselt über http
+  └─ 🟡 POST https://formspree.io/f/abc – sendet an einen fremden Server
+
+🟡 Sicherheits-Header         5 von 5 fehlen
+  ├─ 🟡 Content-Security-Policy fehlt
+  ├─ 🟡 X-Frame-Options fehlt
+  ├─ 🟡 X-Content-Type-Options fehlt
+  ├─ 🟡 Referrer-Policy fehlt
+  └─ 🟡 Permissions-Policy fehlt
+
+🟡 Verratene Details          3 Angaben mit Versionsnummer
+  ├─ 🟡 Header server: Apache/2.4.41 (Ubuntu)
+  ├─ 🟡 Header x-powered-by: PHP/8.1.2
+  └─ 🟡 <meta name="generator">: WordPress 6.2
+     → Mit der Versionsnummer lässt sich gezielt nach bekannten Lücken suchen.
+     → Versionsnummern lassen sich meist abschalten, etwa mit expose_php = Off
+       in PHP oder server_tokens off in nginx.
+
+Technische Vorprüfung – keine Rechtsberatung und keine Aussage darüber, ob die
+Seite DSGVO-konform ist.

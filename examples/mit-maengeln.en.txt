@@ -1,0 +1,48 @@
+spurlos 0.1.0  https://shop.example/tracked.html
+5 problems · 2 notes
+
+🔴 Third-party servers              4
+  ├─ 🔴 cdn.unbekannt.example (1 request)
+  ├─ 🔴 fonts.googleapis.com – Google Fonts (1 request)
+  ├─ 🔴 www.googletagmanager.com – Google Tag Manager (1 request)
+  └─ 🔴 www.youtube.com – YouTube (1 request)
+     → Each of them learns the visitor's IP address on opening the page, before
+       any click.
+
+🔴 Cookies and storage              2 cookies, 1 entry in browser storage
+  ├─ 🟡 Cookie session (shop.example) – first-party, unknown, until the session ends, without Secure
+  ├─ 🔴 Cookie _ga (shop.example) – first-party, Google Analytics, 400 days, without Secure
+  └─ 🟡 localStorage: theme – unknown
+     → Set on the first visit, before any click.
+     → Secure: the cookie also travels over unencrypted http. HttpOnly: scripts
+       on the page can read the session.
+
+🔴 Legal notice and privacy policy  incomplete
+  ├─ 🔴 Legal notice (Impressum): “Impressum” → https://shop.example/rechtliches – answers with status 404
+  └─ 🔴 Privacy policy: no link found on the page
+
+🔴 HTTPS                            with problems
+  ├─ 🔴 http:// serves the page without redirecting to https://.
+  └─ 🟡 No HSTS header (Strict-Transport-Security): browsers do not remember to use https only.
+
+🔴 Forms                            2
+  ├─ 🔴 POST http://shop.example/newsletter – sends unencrypted over http
+  └─ 🟡 POST https://formspree.io/f/abc – sends to a third-party server
+
+🟡 Security headers                 5 of 5 missing
+  ├─ 🟡 Content-Security-Policy missing
+  ├─ 🟡 X-Frame-Options missing
+  ├─ 🟡 X-Content-Type-Options missing
+  ├─ 🟡 Referrer-Policy missing
+  └─ 🟡 Permissions-Policy missing
+
+🟡 Software details                 3 entries with a version number
+  ├─ 🟡 Header server: Apache/2.4.41 (Ubuntu)
+  ├─ 🟡 Header x-powered-by: PHP/8.1.2
+  └─ 🟡 <meta name="generator">: WordPress 6.2
+     → A version number allows a targeted search for known holes.
+     → Version numbers can usually be switched off, e.g. with expose_php = Off
+       in PHP or server_tokens off in nginx.
+
+Technical pre-check – not legal advice, and no statement on whether the site
+complies with the GDPR.

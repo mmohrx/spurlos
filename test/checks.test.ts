@@ -96,8 +96,10 @@ describe('legal', () => {
     expect(legalLinks([{ text: 'Rechtliches', href: 'https://www.firma.de/datenschutz.html' }])[0]?.kind).toBe('datenschutz')
   })
 
-  test('a link that names both counts once, as Impressum', () => {
-    expect(legalLinks([{ text: 'Impressum & Datenschutz', href: 'https://www.firma.de/rechtliches' }]).map(l => l.kind)).toEqual(['impressum'])
+  test('a link that names both counts for both', () => {
+    const both = [{ text: 'Impressum & Datenschutz', href: 'https://www.firma.de/impressum/' }]
+    expect(legalLinks(both).map(l => l.kind)).toEqual(['impressum', 'datenschutz'])
+    expect(legal({ ...base, links: both, legal: [visit('https://www.firma.de/impressum/')] }).level).toBe('green')
   })
 
   test('both linked and reachable is green', () => {
@@ -152,6 +154,11 @@ describe('headers', () => {
       'permissions-policy': 'camera=()',
     }
     expect(headers({ ...base, headers: h })).toEqual({ check: 'headers', level: 'green', missing: [] })
+  })
+
+  test('a CSP or referrer policy in a meta tag counts, frame-ancestors there does not', () => {
+    const r = headers({ ...base, metaCsp: "default-src 'self'; frame-ancestors 'none'", metaReferrer: 'no-referrer' })
+    expect(r).toMatchObject({ missing: ['X-Frame-Options', 'X-Content-Type-Options', 'Permissions-Policy'] })
   })
 
   test('frame-ancestors in the CSP stands in for X-Frame-Options, otherwise each missing one is listed', () => {

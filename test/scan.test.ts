@@ -73,6 +73,7 @@ describe('scan', { timeout: 30_000 }, () => {
     })
     expect(pick(results, 'https').http).toBe('redirects')
     expect(s.legal.map(v => v.url)).toEqual([`${SITE}/impressum`, `${SITE}/datenschutz`])
+    expect(s).toMatchObject({ metaCsp: "default-src 'self'", metaReferrer: 'no-referrer' })
   })
 
   test('a page with fonts, tag manager, video, cookies and leaky forms', async () => {

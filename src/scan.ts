@@ -78,6 +78,10 @@ export type Scan = {
   /** the links that look like Impressum or Datenschutz, each opened on its own */
   legal: Visit[]
   forms: Form[]
+  /** a Content-Security-Policy set in a <meta http-equiv> tag, the only way to one on hosts without own headers */
+  metaCsp?: string
+  /** a referrer policy set in <meta name="referrer"> */
+  metaReferrer?: string
   /** the user agent the page was opened with */
   userAgent: string
 }
@@ -131,7 +135,7 @@ export async function scan(url: string, options: ScanOptions = {}): Promise<Scan
       .then(() => true, () => false)
 
     const cookies = (await context.cookies()).map(c => ({ name: c.name, domain: c.domain.replace(/^\./, ''), expires: c.expires }))
-    const { storage, links, forms } = await page.evaluate(() => {
+    const { storage, links, forms, metaCsp, metaReferrer } = await page.evaluate(() => {
       const storage: { area: 'localStorage' | 'sessionStorage'; key: string }[] = []
       for (const area of ['localStorage', 'sessionStorage'] as const) {
         const s = window[area]
@@ -142,7 +146,9 @@ export async function scan(url: string, options: ScanOptions = {}): Promise<Scan
         href: (a as HTMLAnchorElement).href,
       }))
       const forms = [...document.forms].map(f => ({ action: f.action, method: (f.getAttribute('method') ?? 'get').toLowerCase() }))
-      return { storage, links, forms }
+      const meta = [...document.querySelectorAll('meta[http-equiv]')].find(m => m.getAttribute('http-equiv')?.toLowerCase() === 'content-security-policy')
+      const referrer = document.querySelector('meta[name="referrer" i]')?.getAttribute('content') ?? null
+      return { storage, links, forms, metaCsp: meta?.getAttribute('content') ?? null, metaReferrer: referrer }
     })
 
     const headers = await response.allHeaders()
@@ -165,7 +171,10 @@ export async function scan(url: string, options: ScanOptions = {}): Promise<Scan
     }
     if (tls?.validTo) result.certificate = { validTo: tls.validTo, issuer: tls.issuer ?? '' }
     if (finalUrl.startsWith('https:')) result.http = await probeHttp(finalUrl.replace(/^https:/, 'http:'), options.fetch ?? fetch, options.userAgent ?? BOT_AGENT)
-    for (const l of legalLinks(links)) result.legal.push(await visitor(l.href))
+    if (metaCsp) result.metaCsp = metaCsp
+    if (metaReferrer) result.metaReferrer = metaReferrer
+    // one page can be both Impressum and Datenschutz; open it once
+    for (const href of new Set(legalLinks(links).map(l => l.href))) result.legal.push(await visitor(href))
     return result
   } finally {
     await browser.close()

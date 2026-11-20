@@ -90,11 +90,11 @@ const LEGAL: Record<LegalKind, RegExp> = {
   datenschutz: /datenschutz|privacy|data[ -]?protection/i,
 }
 
-/** The first link per kind whose text or address names it; Impressum wins over Datenschutz for a link that says both. */
+/** The first link per kind whose text or address names it. A link like „Impressum & Datenschutz“ counts for both. */
 export function legalLinks(links: Link[]): (Link & { kind: LegalKind })[] {
   const out: (Link & { kind: LegalKind })[] = []
   for (const kind of ['impressum', 'datenschutz'] as const) {
-    const l = links.find(l => /^https?:/.test(l.href) && !out.some(o => o.href === l.href) && (LEGAL[kind].test(l.text) || LEGAL[kind].test(l.href)))
+    const l = links.find(l => /^https?:/.test(l.href) && (LEGAL[kind].test(l.text) || LEGAL[kind].test(l.href)))
     if (l) out.push({ ...l, kind })
   }
   return out
@@ -141,11 +141,12 @@ export function https(scan: Scan, now = Date.now()): Result {
 export function headers(scan: Scan): Result {
   const h = scan.headers
   const csp = h['content-security-policy'] ?? ''
+  // a CSP or referrer policy in a <meta> tag counts, but browsers ignore frame-ancestors there
   const missing = [
-    !csp && 'Content-Security-Policy',
+    !csp && !scan.metaCsp && 'Content-Security-Policy',
     !h['x-frame-options'] && !/frame-ancestors/i.test(csp) && 'X-Frame-Options',
     h['x-content-type-options']?.toLowerCase() !== 'nosniff' && 'X-Content-Type-Options',
-    !h['referrer-policy'] && 'Referrer-Policy',
+    !h['referrer-policy'] && !scan.metaReferrer && 'Referrer-Policy',
     !h['permissions-policy'] && 'Permissions-Policy',
   ].filter((m): m is string => typeof m === 'string')
   return { check: 'headers', level: missing.length ? 'yellow' : 'green', missing }

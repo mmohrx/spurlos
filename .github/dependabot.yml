@@ -11,3 +11,7 @@ updates:
   - package-ecosystem: docker
     directory: /
     schedule: { interval: weekly }
+    ignore:
+      # a new major of Node is odd-numbered half the time, without long-term support; move to the next LTS by hand
+      - dependency-name: node
+        update-types: ['version-update:semver-major']

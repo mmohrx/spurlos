@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- The Docker image and the action now run on Node 26, the current LTS, instead of Node 24.
+
 ## 0.6.0 – 2026-11-25
 
 - Known services now carry where their provider has its seat (`country` in `services.json`, that of the parent company), for 193 of 247. The check "Third-party servers" names those based outside the EU and the EEA with their country, such as "United States: Google Analytics, Meta Pixel". It is the company's seat, not where its servers stand, and changes no light.
